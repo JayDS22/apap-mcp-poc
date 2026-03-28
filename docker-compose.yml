@@ -38,15 +38,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Run drizzle schema push on startup, then start the server.
-    # This ensures the DB schema exists on first boot without manual steps.
-    command: >
-      sh -c "
-        echo 'Pushing database schema...' &&
-        npx drizzle-kit push --force &&
-        echo 'Schema ready. Starting server...' &&
-        node dist/index.js
-      "
+    # startup.js waits for Postgres, pushes schema, then starts the server.
+    # No custom command needed - the Dockerfile CMD handles it.
 
 volumes:
   pgdata:
