@@ -1,0 +1,52 @@
+# One-command local development: docker compose up
+# Starts Postgres + the APAP MCP POC server.
+# The server waits for Postgres to be healthy before starting.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1baddeed
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 9000
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1baddeed
+      POSTGRES_DATABASE: postgres
+      LOG_LEVEL: debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Run drizzle schema push on startup, then start the server.
+    # This ensures the DB schema exists on first boot without manual steps.
+    command: >
+      sh -c "
+        echo 'Pushing database schema...' &&
+        npx drizzle-kit push --force &&
+        echo 'Schema ready. Starting server...' &&
+        node dist/index.js
+      "
+
+volumes:
+  pgdata:

@@ -1,0 +1,46 @@
+{
+  "name": "apap-mcp-poc",
+  "version": "0.1.0",
+  "description": "POC: Shared service layer refactor for the APAP/MCP server (GSoC 2026, Accord Project Idea #4)",
+  "author": "Jay Guwalani <jguwalan@umd.edu>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --coverage __tests__/unit/",
+    "test:integration": "vitest run --coverage __tests__/integration/",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint src/ __tests__/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "drizzle-orm": "^0.39.3",
+    "drizzle-zod": "^0.7.0",
+    "express": "^4.21.2",
+    "pg": "^8.13.3",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.0",
+    "@types/pg": "^8.11.11",
+    "@vitest/coverage-v8": "^3.0.5",
+    "drizzle-kit": "^0.30.4",
+    "eslint": "^9.19.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
