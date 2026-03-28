@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Validate environment variables at startup. If something's missing we want to
-// know immediately, not 30 seconds in when the first DB query fails.
+// Fail-fast env validation. Learned this the hard way at Bridgestone -- a missing
+// DB password that didn't surface until the first query hit 30 seconds into startup.
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   HOST: z.string().default('0.0.0.0'),

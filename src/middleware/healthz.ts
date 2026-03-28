@@ -2,11 +2,7 @@ import { Router, Request, Response } from 'express';
 import type { Database } from '../db/client.js';
 import { sql } from 'drizzle-orm';
 
-/**
- * /healthz returns 200 when the server can reach Postgres, 503 otherwise.
- * Docker Compose uses this for the healthcheck directive so dependent
- * services know when the server is actually ready to take traffic.
- */
+/** /healthz -- 200 when Postgres is reachable, 503 otherwise. Used by Docker healthcheck. */
 export function createHealthRouter(db: Database): Router {
   const router = Router();
 

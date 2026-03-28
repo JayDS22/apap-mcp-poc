@@ -11,9 +11,7 @@ function getRootLogger(): pino.Logger {
 
   _rootLogger = pino({
     level: config.LOG_LEVEL,
-    // Pretty print in development, structured JSON in production.
-    // pino-pretty is only loaded when NODE_ENV=development to keep
-    // the production bundle lean.
+    // pino-pretty only loads in dev so production stays on structured JSON.
     ...(isDev && {
       transport: {
         target: 'pino-pretty',
@@ -25,19 +23,12 @@ function getRootLogger(): pino.Logger {
   return _rootLogger;
 }
 
-/**
- * Create a child logger scoped to a specific component.
- * Usage: const logger = createLogger('mcp-handler');
- *        logger.info({ sessionId }, 'Session started');
- */
+/** Child logger scoped to a component name. */
 export function createLogger(component: string): pino.Logger {
   return getRootLogger().child({ component });
 }
 
-/**
- * Express middleware that logs every request with duration.
- * Attaches a request-id header for correlation across MCP sessions.
- */
+/** Request logging middleware with duration tracking and x-request-id correlation. */
 export function requestLogger() {
   const logger = createLogger('http');
 

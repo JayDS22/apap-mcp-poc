@@ -9,32 +9,19 @@ import { requestLogger, createLogger } from './middleware/logging.js';
 const logger = createLogger('server');
 
 async function main() {
-  // Validate env vars before doing anything else.
-  // If something is missing, this throws a clear ZodError and the process exits.
   const config = getConfig();
   const { HOST, PORT } = config;
 
   logger.info({ host: HOST, port: PORT, env: config.NODE_ENV }, 'Starting APAP MCP POC server');
 
-  // Get the singleton database connection
   const db = getDatabase();
-
-  // Build Express app
   const app = express();
 
-  // Parse JSON bodies for REST routes and MCP POST endpoints
   app.use(express.json());
-
-  // Request logging (structured, with request-id correlation)
   app.use(requestLogger());
-
-  // Health check - Docker Compose and k8s readiness probes hit this
   app.use(createHealthRouter(db));
-
-  // REST API routes (same service layer as MCP)
   app.use(createApiRouter(db));
 
-  // MCP transport endpoints (SSE + StreamableHTTP)
   const mcpRouter = express.Router();
   mountMcpRoutes(mcpRouter, db);
   app.use(mcpRouter);

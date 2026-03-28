@@ -8,22 +8,18 @@ import {
   InvalidPayloadError,
 } from './errors.js';
 
-/** List all agreements. Replaces: makeApiRequest(`${API_BASE_URL}/agreements`) */
+/** Replaces: makeApiRequest(`${API_BASE_URL}/agreements`) */
 export async function listAgreements(db: Database): Promise<AgreementRow[]> {
-  const rows = await db.select().from(Agreement);
-  return rows;
+  return db.select().from(Agreement);
 }
 
-/** Get by ID. Throws AgreementNotFoundError instead of the RI's generic 'Failed to load agreement'. */
+/** Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}`) */
 export async function getAgreementById(db: Database, id: number): Promise<AgreementRow> {
   const rows = await db.select().from(Agreement).where(eq(Agreement.id, id)).limit(1);
-  if (rows.length === 0) {
-    throw new AgreementNotFoundError(id);
-  }
+  if (rows.length === 0) throw new AgreementNotFoundError(id);
   return rows[0];
 }
 
-/** Insert a new agreement. */
 export async function createAgreement(
   db: Database,
   data: AgreementInsert,
@@ -32,49 +28,33 @@ export async function createAgreement(
   return rows[0];
 }
 
-/**
- * Update an existing agreement by ID.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}`, { method: 'PUT', body })
- * Used by: REST PUT /agreements/:id
- */
 export async function updateAgreement(
   db: Database,
   id: number,
   data: Partial<AgreementInsert>,
 ): Promise<AgreementRow> {
-  const rows = await db
-    .update(Agreement)
-    .set(data)
-    .where(eq(Agreement.id, id))
-    .returning();
-  if (rows.length === 0) {
-    throw new AgreementNotFoundError(id);
-  }
+  const rows = await db.update(Agreement).set(data).where(eq(Agreement.id, id)).returning();
+  if (rows.length === 0) throw new AgreementNotFoundError(id);
   return rows[0];
 }
 
-/** Delete by ID. Throws if not found. */
 export async function deleteAgreement(db: Database, id: number): Promise<void> {
   const rows = await db.delete(Agreement).where(eq(Agreement.id, id)).returning();
-  if (rows.length === 0) {
-    throw new AgreementNotFoundError(id);
-  }
+  if (rows.length === 0) throw new AgreementNotFoundError(id);
 }
 
 // ----- Convert + Trigger -----
 //
-// In production these would call @accordproject/template-engine directly.
-// For the POC we do the DB lookups and return a structured representation
-// that proves the service layer plumbing works end-to-end. Swapping in the
-// real engine is a one-line import change, not an architectural change.
+// These two operations are the interesting ones. In production they call
+// @accordproject/template-engine to render documents and evaluate business
+// rules. For this POC, I've wired the DB lookups and structured the code
+// so that swapping in the real engine is a one-import change, not a rewrite.
 
 /**
- * Convert an agreement to HTML or Markdown.
  * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}/convert/${format}`)
  *
- * Loads the agreement + its template from the DB, renders output.
- * Full version would feed both into the template engine here.
+ * Loads agreement + associated template from DB, renders to HTML or Markdown.
+ * The template-engine integration point is clearly marked below.
  */
 export async function convertAgreement(
   db: Database,
@@ -115,11 +95,11 @@ export async function convertAgreement(
 }
 
 /**
- * Send a JSON payload to the agreement's template logic.
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}/trigger`, { method: 'POST', body })
+ * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}/trigger`, POST)
  *
- * In production this evaluates the template's business rules (Ergo/TS runtime).
- * POC validates the payload, merges it into state, and returns the result.
+ * Validates the JSON payload, loads the agreement, runs it through logic
+ * evaluation. In production this invokes the Ergo/TS runtime via template-engine.
+ * POC merges the payload into state and returns a structured result.
  */
 export async function triggerAgreement(
   db: Database,

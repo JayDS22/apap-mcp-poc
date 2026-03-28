@@ -1,14 +1,14 @@
 /**
- * Error types for the service layer.
+ * Typed error hierarchy for the service layer.
  *
- * The RI throws bare strings everywhere: throw new Error('Failed to load template').
- * That's useless for the caller -- you can't distinguish a 404 from a 500, and
- * you can't give the client anything actionable in the response body.
+ * The RI throws bare strings everywhere: `throw new Error('Failed to load template')`.
+ * That is useless for the caller -- you cannot distinguish a 404 from a 500, and
+ * you cannot give the client anything actionable in the response body.
  *
- * These carry a machine-readable code, an HTTP status, a message, and optional
- * details. The MCP handler and REST router each have their own catch block that
- * maps ServiceError into the right response shape for their protocol. Anything
- * that ISN'T a ServiceError is a genuine bug and gets treated as a 500.
+ * Each error here carries a machine-readable code, an HTTP status, a human message,
+ * and optional structured details. The MCP handler and REST router each map
+ * ServiceError into the right response shape for their protocol. Anything that
+ * is NOT a ServiceError is a genuine bug and gets treated as a 500.
  */
 
 export class ServiceError extends Error {

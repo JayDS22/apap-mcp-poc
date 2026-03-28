@@ -20,15 +20,17 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('mcp-handler');
 
-// Active session -> transport mappings. StreamableHTTP needs this to route
-// follow-up requests to the right transport instance after initialization.
+// Session-to-transport maps. StreamableHTTP needs this so follow-up
+// requests get routed to the transport that handled initialization.
 const transports: Record<string, StreamableHTTPServerTransport> = {};
 const sseTransports: Record<string, SSEServerTransport> = {};
 
 /**
- * Wire up MCP tools and resources. The key difference from the RI: every
- * handler here calls the service layer directly. No makeApiRequest, no fetch,
- * no round-trip through Express to reach a database in the same process.
+ * Build the McpServer with all tool and resource registrations.
+ *
+ * This is where the refactor lives: every handler calls the shared service
+ * layer directly instead of looping back through makeApiRequest -> fetch ->
+ * Express -> handler -> DB. The internal HTTP round-trip is gone.
  */
 function createMcpServer(db: Database): McpServer {
   const server = new McpServer(

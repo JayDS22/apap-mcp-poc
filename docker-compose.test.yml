@@ -1,7 +1,5 @@
-# Test-only Postgres instance for integration tests.
+# Ephemeral Postgres for CI. tmpfs so tests run fast.
 # Usage: docker compose -f docker-compose.test.yml up -d
-# This gives tests a real Postgres to run against without
-# interfering with the development database.
 
 services:
   postgres-test:
@@ -17,6 +15,5 @@ services:
       interval: 2s
       timeout: 3s
       retries: 10
-    # tmpfs for speed. Test data is ephemeral anyway.
     tmpfs:
       - /var/lib/postgresql/data

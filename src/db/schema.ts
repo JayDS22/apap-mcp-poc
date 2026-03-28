@@ -1,7 +1,7 @@
 import { pgTable, serial, text, varchar, json, pgEnum } from 'drizzle-orm/pg-core';
 
-// The APAP RI defines these four agreement states.
-// Using a Postgres enum keeps the DB honest about allowed values.
+// Mirrors server/db/schema.ts from the upstream APAP RI.
+// PG enum enforces valid agreement states at the DB level.
 export const agreementStatusEnum = pgEnum('AgreementStatusType', [
   'DRAFT',
   'SIGNING',

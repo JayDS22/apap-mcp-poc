@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// startup.js - Push the DB schema then start the server.
-// This avoids the drizzle-kit CLI interactive prompt that breaks in Docker.
-// Usage: node startup.js
+// Boot sequence for Docker: wait for Postgres, push schema, start server.
+// drizzle-kit push has an interactive confirmation prompt that breaks in
+// non-TTY containers, so we pipe 'Yes' to get past it.
 
 import { execSync } from 'child_process';
 
@@ -41,8 +41,7 @@ async function waitForPostgres() {
 async function pushSchema() {
   console.log('[startup] Pushing database schema...');
   try {
-    // Use drizzle-kit push with a piped 'Yes' to handle the interactive prompt.
-    // The --config flag ensures it finds our drizzle.config.ts.
+    // Pipe 'Yes' to bypass drizzle-kit's interactive confirmation.
     execSync('echo "Yes" | npx drizzle-kit push', {
       stdio: 'inherit',
       cwd: process.cwd(),

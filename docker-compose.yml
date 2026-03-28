@@ -1,6 +1,4 @@
-# One-command local development: docker compose up
-# Starts Postgres + the APAP MCP POC server.
-# The server waits for Postgres to be healthy before starting.
+# docker compose up -- Postgres + server, ready in ~30 seconds.
 
 services:
   postgres:
@@ -20,9 +18,7 @@ services:
       retries: 10
 
   server:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "9000:9000"
     environment:
@@ -38,8 +34,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # startup.js waits for Postgres, pushes schema, then starts the server.
-    # No custom command needed - the Dockerfile CMD handles it.
 
 volumes:
   pgdata:
