@@ -6,9 +6,7 @@ import { TemplateNotFoundError, TemplateDuplicateError } from './errors.js';
 
 /**
  * List all templates.
- *
  * Replaces: makeApiRequest(`${API_BASE_URL}/templates`)
- * Used by: MCP resource "templates", REST GET /templates
  */
 export async function listTemplates(db: Database): Promise<TemplateRow[]> {
   const rows = await db.select().from(Template);
@@ -16,12 +14,8 @@ export async function listTemplates(db: Database): Promise<TemplateRow[]> {
 }
 
 /**
- * Fetch a single template by its numeric ID.
- *
+ * Get a template by numeric ID.
  * Replaces: makeApiRequest(`${API_BASE_URL}/templates/${templateId}`)
- * Used by: MCP tool "getTemplate", MCP resource template "apap://templates/{templateId}"
- *
- * Throws TemplateNotFoundError if the ID doesn't match any row.
  */
 export async function getTemplateById(db: Database, id: number): Promise<TemplateRow> {
   const rows = await db.select().from(Template).where(eq(Template.id, id)).limit(1);
@@ -32,12 +26,8 @@ export async function getTemplateById(db: Database, id: number): Promise<Templat
 }
 
 /**
- * Fetch a single template by URI.
- *
- * The APAP RI uses URIs as the primary external identifier for templates,
- * but the DB also has a numeric auto-increment ID. Some callers pass the URI
- * (like the REST route), others pass the numeric ID (like MCP tools). We
- * support both lookup strategies.
+ * Get a template by URI. The RI uses URIs as the primary external identifier,
+ * but MCP tools typically pass numeric IDs. We support both lookups.
  */
 export async function getTemplateByUri(db: Database, uri: string): Promise<TemplateRow> {
   const rows = await db.select().from(Template).where(eq(Template.uri, uri)).limit(1);
@@ -48,12 +38,8 @@ export async function getTemplateByUri(db: Database, uri: string): Promise<Templ
 }
 
 /**
- * Create a new template.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/templates`, { method: 'POST', body })
- * Used by: REST POST /templates
- *
- * Throws TemplateDuplicateError if the URI already exists (unique constraint).
+ * Insert a new template. Catches Postgres unique constraint violations
+ * and re-throws as TemplateDuplicateError so callers get a 409, not a 500.
  */
 export async function createTemplate(
   db: Database,
@@ -71,12 +57,7 @@ export async function createTemplate(
   }
 }
 
-/**
- * Update an existing template by URI.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/templates/${uri}`, { method: 'PUT', body })
- * Used by: REST PUT /templates/:uri
- */
+/** Update an existing template by URI. Returns the updated row or throws if not found. */
 export async function updateTemplate(
   db: Database,
   uri: string,
@@ -93,12 +74,7 @@ export async function updateTemplate(
   return rows[0];
 }
 
-/**
- * Delete a template by URI.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/templates/${uri}`, { method: 'DELETE' })
- * Used by: REST DELETE /templates/:uri
- */
+/** Delete by URI. Throws TemplateNotFoundError if nothing was deleted. */
 export async function deleteTemplate(db: Database, uri: string): Promise<void> {
   const rows = await db.delete(Template).where(eq(Template.uri, uri)).returning();
   if (rows.length === 0) {

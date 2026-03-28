@@ -20,17 +20,14 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('rest-api');
 
-/** Safely extract a single string from Express route params (Express 5 types them as string | string[]). */
+/** Express 5 params can be string | string[]. This unwraps them. */
 function param(val: string | string[]): string {
   return Array.isArray(val) ? val[0] : val;
 }
 
 /**
- * Build the REST API router.
- *
- * This router and the MCP handler import the exact same service functions.
- * No duplication, no internal HTTP loop. A bug fix in the service layer
- * automatically fixes both the REST API and MCP tools.
+ * REST routes. Same service functions as the MCP handler --
+ * fix a bug in the service layer, both consumers get the fix.
  */
 export function createApiRouter(db: Database): Router {
   const router = Router();

@@ -1,6 +1,5 @@
-// Service layer barrel export.
 // Both MCP handlers and REST routes import from here.
-// Services never import transport-layer code (Express, MCP SDK).
+// Services never touch transport-layer code.
 
 export * from './templateService.js';
 export * from './agreementService.js';

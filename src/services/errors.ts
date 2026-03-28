@@ -1,19 +1,14 @@
 /**
- * Structured error hierarchy for the APAP service layer.
+ * Error types for the service layer.
  *
- * The current RI throws bare strings like `throw new Error('Failed to load template')`.
- * That makes it impossible for MCP handlers or REST routes to return the right status
- * code or give the client useful context about what went wrong.
+ * The RI throws bare strings everywhere: throw new Error('Failed to load template').
+ * That's useless for the caller -- you can't distinguish a 404 from a 500, and
+ * you can't give the client anything actionable in the response body.
  *
- * Every error here carries:
- *   - code:       A machine-readable string the client can switch on
- *   - statusCode: The HTTP status code that REST routes should use
- *   - message:    A human-readable description
- *   - details:    Optional structured payload for debugging
- *
- * MCP handlers catch ServiceError and map it to an MCP error response.
- * REST routes catch ServiceError and map it to the correct HTTP status.
- * Anything that ISN'T a ServiceError is treated as an unexpected 500.
+ * These carry a machine-readable code, an HTTP status, a message, and optional
+ * details. The MCP handler and REST router each have their own catch block that
+ * maps ServiceError into the right response shape for their protocol. Anything
+ * that ISN'T a ServiceError is a genuine bug and gets treated as a 500.
  */
 
 export class ServiceError extends Error {
@@ -37,11 +32,7 @@ export class ServiceError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 
-  /**
-   * Serialize to a clean JSON shape for API responses.
-   * We intentionally omit the stack trace here because
-   * that belongs in server logs, not client payloads.
-   */
+  /** Serialize for API responses. Stack trace stays in server logs, not in the payload. */
   toJSON() {
     return {
       error: {

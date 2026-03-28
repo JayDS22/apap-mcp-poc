@@ -20,19 +20,15 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('mcp-handler');
 
-// Track active transports by session ID so we can route
-// subsequent requests to the right StreamableHTTP transport.
+// Active session -> transport mappings. StreamableHTTP needs this to route
+// follow-up requests to the right transport instance after initialization.
 const transports: Record<string, StreamableHTTPServerTransport> = {};
-
-// SSE transport mapping (legacy protocol support)
 const sseTransports: Record<string, SSEServerTransport> = {};
 
 /**
- * Build the McpServer instance with all resource and tool registrations.
- *
- * This is the core of the refactor: every handler calls the shared service
- * layer directly instead of going through makeApiRequest -> fetch -> Express
- * -> handler -> DB. The internal HTTP loop is gone.
+ * Wire up MCP tools and resources. The key difference from the RI: every
+ * handler here calls the service layer directly. No makeApiRequest, no fetch,
+ * no round-trip through Express to reach a database in the same process.
  */
 function createMcpServer(db: Database): McpServer {
   const server = new McpServer(
@@ -217,10 +213,7 @@ Refer to the agreement's template model to determine which fields are required o
   return server;
 }
 
-/**
- * Map a caught error into an MCP-compatible tool result.
- * ServiceErrors get their structured payload; everything else is a generic 500.
- */
+/** ServiceErrors get structured responses. Everything else is a 500 with a generic message. */
 function handleToolError(err: unknown, toolName: string): CallToolResult {
   if (err instanceof ServiceError) {
     logger.warn({ tool: toolName, errorCode: err.code, statusCode: err.statusCode }, err.message);
@@ -239,11 +232,8 @@ function handleToolError(err: unknown, toolName: string): CallToolResult {
 }
 
 /**
- * Mount MCP transport endpoints onto an Express router.
- *
- * Supports both:
- *   - SSE (deprecated, protocol 2024-11-05): GET /sse + POST /messages
- *   - StreamableHTTP (current, protocol 2025-03-26): POST/GET/DELETE /mcp
+ * Mount MCP transport endpoints on an Express router.
+ * Supports SSE (legacy, 2024-11-05) and StreamableHTTP (current, 2025-03-26).
  */
 export function mountMcpRoutes(router: express.Router, db: Database): void {
   // -- StreamableHTTP transport --

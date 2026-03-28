@@ -1,191 +1,202 @@
-# APAP/MCP Server POC: Shared Service Layer Refactor
+# APAP/MCP Server POC - Service Layer Refactor
 
-> **GSoC 2026 Proof of Concept for [Accord Project](https://accordproject.org) Idea #4**
-> *Hardening the APAP/MCP Server: Testing, Error Handling, and CI/CD*
+> GSoC 2026 POC for [Accord Project](https://accordproject.org) Idea #4: Hardening the APAP/MCP Server
 
-This repository is a working proof-of-concept that demonstrates the core architectural refactor proposed in my GSoC 2026 proposal. It replaces the internal HTTP loop in the APAP Reference Implementation's MCP handler with a shared service layer that both MCP tools and REST routes call directly.
+**Jay Guwalani** | Research Scientist, UMD | [GitHub](https://github.com/JayDS22) | jguwalan@umd.edu
 
-**Author:** Jay Guwalani | Research Scientist, University of Maryland | [GitHub](https://github.com/JayDS22) | jguwalan@umd.edu
-
-**Prior APAP contributions:** Issue [#152](https://github.com/accordproject/apap/issues/152), PR [#153](https://github.com/accordproject/apap/pull/153), PR [#154](https://github.com/accordproject/apap/pull/154), PR [#155](https://github.com/accordproject/apap/pull/155), Issue [#143](https://github.com/accordproject/apap/issues/143) comment
+Prior APAP work: [#152](https://github.com/accordproject/apap/issues/152), [PR #153](https://github.com/accordproject/apap/pull/153), [PR #154](https://github.com/accordproject/apap/pull/154), [PR #155](https://github.com/accordproject/apap/pull/155), [#143 comment](https://github.com/accordproject/apap/issues/143)
 
 ---
 
-## The Problem
+## What this is
 
-The current APAP Reference Implementation has a design bottleneck in `server/handlers/mcp.ts`. Every MCP tool call goes through a helper function called `makeApiRequest()` that wraps `fetch()` pointed at the same Express server:
-
-```
-MCP Tool Call
-  -> makeApiRequest()
-    -> fetch('http://localhost:9000/agreements/1')
-      -> Express router
-        -> handler
-          -> Drizzle ORM
-            -> Postgres
-```
-
-This means every MCP tool invocation takes a full HTTP round-trip through the network stack, auth middleware, JSON serialization, and Express routing just to reach the database that's sitting in the same process. Error handling suffers too because `makeApiRequest` throws bare strings like `throw new Error('Failed to load template')` regardless of whether the underlying issue is a 404, a 400, or a 500.
-
-## The Solution
-
-This POC implements the refactor: a shared service layer that both MCP tools and REST routes import directly.
+The APAP RI has a weird architectural quirk: every MCP tool call goes through `makeApiRequest()`, which fires off an HTTP `fetch()` to `localhost:9000` -- the same Express server running in the same process. So when Claude calls `getAgreement`, the request travels through the full network stack, JSON serialization, Express routing, and auth middleware just to hit a database that's right there in memory.
 
 ```
-MCP Tool Call                    REST API Request
-  -> services/agreementService     -> services/agreementService
-    -> Drizzle ORM                   -> Drizzle ORM
-      -> Postgres                      -> Postgres
+Current flow:  MCP Tool -> fetch('http://localhost:9000/...') -> Express -> route handler -> Drizzle -> Postgres
+This POC:      MCP Tool -> agreementService.getById(db, id) -> Drizzle -> Postgres
 ```
 
-No internal HTTP loop. No duplicated logic. A bug fix in the service layer automatically fixes both the MCP tools and the REST API. Error handling uses a structured type hierarchy (`ServiceError`, `TemplateNotFoundError`, `AgreementConversionError`, etc.) that MCP handlers map to MCP error responses and REST routes map to the correct HTTP status codes.
+On top of that, every error path throws generic strings (`throw new Error('Failed to load template')`) so there's no way to tell a 404 from a 500 on the client side.
 
-## Architecture
+This POC rips out the HTTP loop and replaces it with a shared service layer. Both MCP tools and REST routes call the same functions. Errors are typed. Tests exist.
 
-```
-src/
-  config.ts              # Zod-validated env vars (fail-fast at startup)
-  index.ts               # Server entry point, wires everything together
-
-  db/
-    schema.ts            # Drizzle ORM schema (matches APAP RI exactly)
-    client.ts            # Connection factory with DI for testability
-
-  services/
-    errors.ts            # ServiceError hierarchy (6 typed error classes)
-    templateService.ts   # Template CRUD via Drizzle (replaces makeApiRequest)
-    agreementService.ts  # Agreement CRUD + convert + trigger via Drizzle
-    index.ts             # Barrel export
-
-  handlers/
-    mcp.ts               # MCP handler (SSE + StreamableHTTP, imports services)
-
-  routes/
-    api.ts               # REST router (imports same services)
-
-  middleware/
-    logging.ts           # Pino structured logging with request-id correlation
-    healthz.ts           # /healthz endpoint for Docker/k8s readiness probes
-```
-
-### Service Layer Rules
-
-These are the invariants that make the architecture work:
-
-1. Every service function takes a `db` instance as its first parameter (dependency injection)
-2. Services return typed results, never raw HTTP responses
-3. Services throw structured `ServiceError` subclasses, never generic strings
-4. Services do NOT import Express, MCP SDK, or any transport-layer code
-5. Service functions map 1:1 with existing MCP tools
-
-### Error Mapping
-
-| Service Error | HTTP Status | MCP Response |
-|---|---|---|
-| `TemplateNotFoundError` | 404 | `{ isError: true, content: [{type: "text", text: JSON.stringify(error)}] }` |
-| `AgreementNotFoundError` | 404 | Same pattern |
-| `AgreementConversionError` | 500 | Same pattern |
-| `InvalidPayloadError` | 400 | Same pattern |
-| `TemplateDuplicateError` | 409 | Same pattern |
-| `ValidationError` | 422 | Same pattern |
-
-## Quick Start
-
-### With Docker (recommended)
+## Quick start
 
 ```bash
 git clone https://github.com/JayDS22/apap-mcp-poc.git
 cd apap-mcp-poc
+
+# Option A: Docker (just works)
 docker compose up
-```
 
-That's it. Docker pulls Postgres and Node.js, pushes the DB schema automatically, and starts the server. You'll see output like:
-
-```
-server  | APAP MCP POC server listening on http://0.0.0.0:9000
-server  |   REST API:        http://0.0.0.0:9000/capabilities
-server  |   MCP SSE:         http://0.0.0.0:9000/sse
-server  |   MCP Streamable:  POST http://0.0.0.0:9000/mcp
-server  |   Health:          http://0.0.0.0:9000/healthz
-```
-
-### Without Docker
-
-```bash
-# Make sure you have Postgres running locally
-cp .env_example .env
-# Edit .env with your Postgres credentials
-
+# Option B: Local (needs Postgres running)
+cp .env_example .env    # edit credentials if yours differ
 npm install
 npx drizzle-kit push
 npm run dev
 ```
 
-### Connect MCP Inspector
+Server comes up on `http://localhost:9000`. Hit `/healthz` to verify.
 
-Once the server is running, open [MCP Inspector](https://inspector.mcp.run/) and connect to:
-- **SSE:** `http://localhost:9000/sse`
-- **StreamableHTTP:** `http://localhost:9000/mcp`
+## Try it out
 
-You should see the four registered tools: `getTemplate`, `getAgreement`, `convert-agreement-to-format`, and `trigger-agreement`.
-
-## Running Tests
+Seed some data and poke at it:
 
 ```bash
-# Unit tests (mocked DB, no Postgres needed)
-npm run test:unit
+# create a template
+curl -s -X POST http://localhost:9000/templates \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "uri": "resource:org.accordproject.protocol@1.0.0.Template#latedelivery",
+    "author": "dan",
+    "displayName": "Late Delivery and Penalty",
+    "version": "1.0.0",
+    "description": "Penalties for late delivery of goods",
+    "license": "Apache-2.0",
+    "keywords": ["late", "delivery", "penalty"],
+    "metadata": {"$class": "org.accordproject.protocol@1.0.0.TemplateMetadata", "runtime": "typescript", "template": "clause", "cicero": "0.25.x"},
+    "templateModel": {"$class": "org.accordproject.protocol@1.0.0.TemplateModel", "typeName": "LatePenaltyClause", "model": {"ctoFiles": []}},
+    "text": {"templateMark": "Late Delivery and Penalty clause text..."}
+  }'
 
-# Integration tests (uses a mock DB with real Express)
-npm run test:integration
+# create an agreement against that template
+curl -s -X POST http://localhost:9000/agreements \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "uri": "apap://agreement-demo1",
+    "data": {"$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel", "forceMajeure": false, "penaltyPercentage": 10.5, "capPercentage": 55, "clauseId": "demo-1"},
+    "template": "resource:org.accordproject.protocol@1.0.0.Template#latedelivery",
+    "agreementStatus": "DRAFT"
+  }'
 
-# All tests with coverage report
-npm test
+# convert to markdown
+curl http://localhost:9000/agreements/1/convert/markdown
+
+# convert to HTML and open it
+curl http://localhost:9000/agreements/1/convert/html -o /tmp/agreement.html
+open /tmp/agreement.html
+
+# trigger agreement logic
+curl -s -X POST http://localhost:9000/agreements/1/trigger \
+  -H 'Content-Type: application/json' \
+  -d '{"$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest", "forceMajeure": false, "goodsValue": 1000}'
+
+# hit a nonexistent agreement -- typed error, not a generic 500
+curl http://localhost:9000/agreements/9999
+# -> {"error":{"code":"AGREEMENT_NOT_FOUND","message":"Agreement not found: 9999","details":{"identifier":9999}}}
 ```
 
-For integration tests against a real Postgres:
+### MCP Inspector
 
 ```bash
-docker compose -f docker-compose.test.yml up -d
-npm run test:integration
-docker compose -f docker-compose.test.yml down
+npx @modelcontextprotocol/inspector
 ```
 
-### Coverage Targets
+Open `http://127.0.0.1:6274`, pick SSE transport, point it at `http://localhost:9000/sse`. You'll see 4 tools and 2 resources, same as the upstream RI.
 
-| Layer | Target | What's measured |
+## Project structure
+
+```
+src/
+  config.ts              # zod-validated env, fails fast on boot
+  index.ts               # wires express + mcp + services together
+
+  db/
+    schema.ts            # drizzle schema, mirrors the RI exactly
+    client.ts            # pg pool factory, injectable for tests
+
+  services/
+    errors.ts            # typed error classes (not generic strings)
+    templateService.ts   # template CRUD, direct drizzle calls
+    agreementService.ts  # agreement CRUD + convert + trigger
+    index.ts             # barrel
+
+  handlers/
+    mcp.ts               # MCP tools + resources (SSE + StreamableHTTP)
+
+  routes/
+    api.ts               # REST endpoints, same service layer
+
+  middleware/
+    logging.ts           # pino, structured json, request-id correlation
+    healthz.ts           # readiness probe for docker/k8s
+```
+
+The important bit: `services/` has zero imports from Express or the MCP SDK. It doesn't know or care who's calling it. The handlers and routes are thin wrappers that translate between their respective protocols and the service layer.
+
+## How the service layer works
+
+Every function takes a `db` handle as the first argument. That's the whole dependency injection story -- no containers, no decorators, just a function parameter. Tests pass a mock, production passes the real pool.
+
+```typescript
+// this is what getAgreement looks like now. no fetch(), no makeApiRequest().
+export async function getAgreementById(db: Database, id: number): Promise<AgreementRow> {
+  const rows = await db.select().from(Agreement).where(eq(Agreement.id, id)).limit(1);
+  if (rows.length === 0) {
+    throw new AgreementNotFoundError(id);  // not throw new Error('Failed to load agreement')
+  }
+  return rows[0];
+}
+```
+
+The MCP handler and the REST route both call this same function. Fix a bug here, it's fixed everywhere. Add pagination, both consumers get it.
+
+### Error types
+
+Instead of `throw new Error('Failed to load template')` everywhere, errors carry context:
+
+| Error | Status | When |
 |---|---|---|
-| `src/services/` | 90% statements | Every service function + every error path |
-| `src/handlers/` | 85% statements | MCP tool registrations, transport setup, error mapping |
+| `TemplateNotFoundError` | 404 | ID/URI doesn't match any row |
+| `AgreementNotFoundError` | 404 | same |
+| `AgreementConversionError` | 500 | template engine blew up during render |
+| `InvalidPayloadError` | 400 | trigger payload isn't valid JSON or isn't an object |
+| `TemplateDuplicateError` | 409 | URI unique constraint violation |
+| `ValidationError` | 422 | general schema validation failure |
 
-## How This Maps to the GSoC Proposal
+The MCP handler catches these and returns structured MCP errors. The REST router maps them to the right HTTP status code. Anything that isn't a `ServiceError` gets logged with full stack trace server-side, and the client gets a generic "something went wrong" -- no leaking internals.
 
-This POC implements **Phase 1** and the start of **Phase 2** from the proposed 12-week GSoC timeline:
+## Tests
 
-| Week | Proposal Phase | What This POC Delivers |
+```bash
+npm test          # all 53 tests + coverage
+npm run test:unit # just unit tests (no db, fast)
+```
+
+Coverage on the service layer is at ~99%. Unit tests mock the db parameter directly -- no test database needed, they run in under a second.
+
+Integration tests spin up real Express instances on random ports, exercise the full MCP handshake (initialize -> list tools -> call tool), and verify error propagation end to end through both SSE and StreamableHTTP transports.
+
+## How this maps to the GSoC timeline
+
+This POC covers Phase 1 and the start of Phase 2 from my proposal:
+
+| Weeks | Phase | What's here |
 |---|---|---|
-| 1-2 | Phase 1: Service Layer | `src/services/` with full CRUD + convert + trigger |
-| 3-4 | Phase 1: Error Handling | `src/services/errors.ts` with 6 typed error classes |
-| 5-6 | Phase 2: Unit Tests | `__tests__/unit/` with mocked DB tests |
-| 7-8 | Phase 2: Integration Tests | `__tests__/integration/` with SSE + StreamableHTTP |
-| 9-10 | Phase 3: CI/CD | `.github/workflows/ci.yml` + Docker Compose |
+| 1-4 | Service layer + errors | `src/services/` -- the core refactor |
+| 5-8 | Testing | `__tests__/` -- unit + integration, both transports |
+| 9-10 | CI/CD | `.github/workflows/ci.yml` + Docker Compose |
 
-The remaining GSoC phases (OpenAPI spec validation, observability, load testing) build on top of this foundation.
+The remaining phases (OpenAPI validation, observability, load testing) build on this foundation.
 
-## Why This Architecture
+## Why this architecture
 
-I've built this exact pattern twice in production:
+I've done this exact refactor twice in production.
 
-**At Bridgestone (2022-2024):** The enterprise AI chatbot had the same problem. Five specialized agents (analytics, trip data, driver safety, fleet performance, crash analysis) were all routing through an internal REST gateway. We refactored to a shared service layer and cut response times by 40% while making the system testable for the first time.
+At Bridgestone, the fleet analytics chatbot had 5 LangChain agents all routing through an internal REST gateway to reach the same Postgres. Ripping that out and giving them direct service access cut p95 latency by 40% and made the system unit-testable for the first time in its life.
 
-**At Aya Healthcare (2025):** The LangGraph-based talent matching system used 5+ agents that needed to share database access. Instead of each agent maintaining its own HTTP client, we built a typed service layer over Postgres (via SQLAlchemy/Drizzle equivalent) that all agents imported directly. Same pattern, same benefits.
+At Aya Healthcare, the LangGraph talent matching system had the same issue with its specialized agents. Same fix, same results -- typed service layer over Postgres, agents import directly, internal HTTP gone.
+
+The APAP `makeApiRequest` pattern is the same anti-pattern. This POC proves the fix works here too.
 
 ## Links
 
-- [APAP Repository](https://github.com/accordproject/apap) (the upstream codebase this POC refactors)
+- [APAP repo](https://github.com/accordproject/apap) -- the upstream codebase
 - [Accord Project](https://accordproject.org)
-- [GSoC 2026 Idea #4](https://wiki.hyperledger.org/display/INTERN/Accord+Project+GSoC+2026+Ideas) - Hardening the APAP/MCP Server
-- [MCP Protocol Spec](https://modelcontextprotocol.io)
+- [GSoC 2026 Ideas](https://wiki.hyperledger.org/display/INTERN/Accord+Project+GSoC+2026+Ideas) -- Idea #4
+- [MCP spec](https://modelcontextprotocol.io)
 
 ## License
 
-Apache-2.0, consistent with the Accord Project ecosystem.
+Apache-2.0

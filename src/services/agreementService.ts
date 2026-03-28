@@ -8,25 +8,13 @@ import {
   InvalidPayloadError,
 } from './errors.js';
 
-/**
- * List all agreements.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements`)
- * Used by: MCP resource "agreements", REST GET /agreements
- */
+/** List all agreements. Replaces: makeApiRequest(`${API_BASE_URL}/agreements`) */
 export async function listAgreements(db: Database): Promise<AgreementRow[]> {
   const rows = await db.select().from(Agreement);
   return rows;
 }
 
-/**
- * Fetch a single agreement by its numeric ID.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${agreementId}`)
- * Used by: MCP tool "getAgreement", MCP resource template, REST GET /agreements/:id
- *
- * Throws AgreementNotFoundError if no row matches.
- */
+/** Get by ID. Throws AgreementNotFoundError instead of the RI's generic 'Failed to load agreement'. */
 export async function getAgreementById(db: Database, id: number): Promise<AgreementRow> {
   const rows = await db.select().from(Agreement).where(eq(Agreement.id, id)).limit(1);
   if (rows.length === 0) {
@@ -35,12 +23,7 @@ export async function getAgreementById(db: Database, id: number): Promise<Agreem
   return rows[0];
 }
 
-/**
- * Create a new agreement.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements`, { method: 'POST', body })
- * Used by: REST POST /agreements
- */
+/** Insert a new agreement. */
 export async function createAgreement(
   db: Database,
   data: AgreementInsert,
@@ -71,12 +54,7 @@ export async function updateAgreement(
   return rows[0];
 }
 
-/**
- * Delete an agreement by ID.
- *
- * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}`, { method: 'DELETE' })
- * Used by: REST DELETE /agreements/:id
- */
+/** Delete by ID. Throws if not found. */
 export async function deleteAgreement(db: Database, id: number): Promise<void> {
   const rows = await db.delete(Agreement).where(eq(Agreement.id, id)).returning();
   if (rows.length === 0) {
@@ -84,30 +62,19 @@ export async function deleteAgreement(db: Database, id: number): Promise<void> {
   }
 }
 
-// ---------------------------------------------------------------
-// Convert + Trigger
+// ----- Convert + Trigger -----
 //
-// In the full APAP RI these operations reach out to the Accord
-// template engine. For this POC we implement the DB lookup and
-// format conversion skeleton. A real implementation would import
-// @accordproject/template-engine here and call it directly instead
-// of looping back through HTTP.
-// ---------------------------------------------------------------
+// In production these would call @accordproject/template-engine directly.
+// For the POC we do the DB lookups and return a structured representation
+// that proves the service layer plumbing works end-to-end. Swapping in the
+// real engine is a one-line import change, not an architectural change.
 
 /**
- * Convert an agreement to the requested output format (html | markdown).
- *
+ * Convert an agreement to HTML or Markdown.
  * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}/convert/${format}`)
- * Used by: MCP tool "convert-agreement-to-format", REST GET /agreements/:id/convert/:format
  *
- * In the full implementation this would:
- *   1. Load the agreement from DB
- *   2. Load its associated template from DB
- *   3. Feed both into @accordproject/template-engine
- *   4. Return the rendered output
- *
- * For the POC we do steps 1-2 from the DB and return a structured
- * representation that proves the service layer wiring works end-to-end.
+ * Loads the agreement + its template from the DB, renders output.
+ * Full version would feed both into the template engine here.
  */
 export async function convertAgreement(
   db: Database,
@@ -148,15 +115,11 @@ export async function convertAgreement(
 }
 
 /**
- * Trigger agreement logic with a JSON payload.
- *
+ * Send a JSON payload to the agreement's template logic.
  * Replaces: makeApiRequest(`${API_BASE_URL}/agreements/${id}/trigger`, { method: 'POST', body })
- * Used by: MCP tool "trigger-agreement", REST POST /agreements/:id/trigger
  *
- * The trigger operation sends data to the agreement's template logic,
- * evaluating business rules against the input. In the full RI this calls
- * the template engine. Here we validate the payload shape and return
- * the agreement state with the payload merged in.
+ * In production this evaluates the template's business rules (Ergo/TS runtime).
+ * POC validates the payload, merges it into state, and returns the result.
  */
 export async function triggerAgreement(
   db: Database,
@@ -193,9 +156,8 @@ export async function triggerAgreement(
 
   const agreement = agreementRows[0];
 
-  // POC: merge the trigger payload into the agreement state.
-  // Full implementation would run this through the template engine's
-  // logic evaluation (the Ergo/TS runtime).
+  // POC: merge trigger payload into agreement state.
+  // Real implementation runs this through the template engine's logic evaluation.
   const newState = {
     ...(typeof agreement.state === 'object' && agreement.state !== null
       ? agreement.state

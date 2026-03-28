@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Validate environment variables at startup so we fail fast instead of
-// discovering a missing DB password 30 seconds into the process.
+// Validate environment variables at startup. If something's missing we want to
+// know immediately, not 30 seconds in when the first DB query fails.
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   HOST: z.string().default('0.0.0.0'),
@@ -26,21 +26,14 @@ export type EnvConfig = z.infer<typeof envSchema>;
 
 let _config: EnvConfig | null = null;
 
-/**
- * Parse and validate environment variables. Throws a clear ZodError
- * if anything is missing or malformed. We cache the result so the
- * validation only runs once per process.
- */
+/** Parse + validate env vars. Cached after first call. Throws ZodError if anything's wrong. */
 export function getConfig(): EnvConfig {
   if (_config) return _config;
   _config = envSchema.parse(process.env);
   return _config;
 }
 
-/**
- * Build a Postgres connection string from individual env vars,
- * or use POSTGRES_URL directly if the caller provided one.
- */
+/** Build a Postgres connection string, or use POSTGRES_URL if the caller set one. */
 export function getDatabaseUrl(config?: EnvConfig): string {
   const c = config ?? getConfig();
   if (c.POSTGRES_URL) return c.POSTGRES_URL;
