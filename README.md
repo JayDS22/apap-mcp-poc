@@ -13,10 +13,7 @@ This is a working proof-of-concept for the core architectural change proposed in
 
 ## Demo
 
-https://github.com/user-attachments/assets/YOUR_VIDEO_ID_HERE
-
-> **Recording instructions:** Start the server, run the curl commands below, then connect MCP Inspector.
-> Keep it under 3 minutes. Upload the `.mov`/`.mp4` to GitHub by dragging it into any issue/PR comment body, then paste the resulting URL above.
+[![Demo Video](images/gsoc-2026-thumbnail.png)](https://www.youtube.com/watch?v=KFwc5IRuKUc)
 
 ---
 
