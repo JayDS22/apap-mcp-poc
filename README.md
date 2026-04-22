@@ -1,6 +1,6 @@
 # APAP/MCP Server POC: Shared Service Layer Refactor
 
-**GSoC 2026 | [Accord Project](https://accordproject.org) | Idea #4 -- Hardening the APAP/MCP Server**
+**[Accord Project](https://accordproject.org) | Idea #4 -- Hardening the APAP/MCP Server**
 
 This is a working proof-of-concept for the core architectural change proposed in my GSoC application: eliminating the internal HTTP loop in the APAP Reference Implementation's MCP handler by introducing a shared service layer that both MCP tools and REST routes consume directly.
 
