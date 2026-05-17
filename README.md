@@ -31,10 +31,11 @@ I ran into the same architecture at Bridgestone where five specialized agents we
 
 ## The Fix
 
-```
-MCP Tool ----\
-              >-- services/agreementService.ts --> Drizzle --> Postgres
-REST API ----/
+```mermaid
+flowchart LR
+    MCP[MCP Tool] --> SVC[services/agreementService.ts]
+    REST[REST API] --> SVC
+    SVC --> DRIZZLE[Drizzle] --> PG[(Postgres)]
 ```
 
 One function. Two consumers. No HTTP loop. Bug fixes propagate to both protocols automatically.
