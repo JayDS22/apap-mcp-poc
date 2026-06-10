@@ -1,0 +1,135 @@
+
+> apap-alternatives-openai-fn-calling@0.0.1 smoke
+> tsx src/smoke.ts
+
+========================================================================
+PROMPT: List all templates available in this APAP server.
+------------------------------------------------------------------------
+[tool] -> list_templates({})
+[tool] <- list_templates (685 bytes)
+
+--- assistant ---
+There is one template available on this APAP server:
+
+- **Template Name**: Late Delivery and Penalty
+- **URI**: resource:org.accordproject.protocol@1.0.0.Template#latedelivery
+- **Version**: 1.0.0
+- **Author**: dan
+- **Description**: Penalties for late delivery of goods
+
+If you need more details or assistance with this template, let me know!
+
+--- usage ---
+turns:       2
+tool calls:  1
+tokens:      prompt=1322, completion=104, total=1426
+model:       gpt-4o-mini
+
+========================================================================
+PROMPT: How many agreements are currently in the system, and what statuses are they in?
+------------------------------------------------------------------------
+[tool] -> list_agreements({})
+[tool] <- list_agreements (611 bytes)
+
+--- assistant ---
+There is currently 1 agreement in the system, which is in the "DRAFT" status.
+
+--- usage ---
+turns:       2
+tool calls:  1
+tokens:      prompt=1339, completion=32, total=1371
+model:       gpt-4o-mini
+
+========================================================================
+PROMPT: Show me the full payload of agreement 1, including its state.
+------------------------------------------------------------------------
+[tool] -> get_agreement({"id":"1"})
+[tool] <- get_agreement (589 bytes)
+
+--- assistant ---
+The full payload of agreement 1 includes the following details:
+
+- **ID:** 1
+- **URI:** apap://agreement-demo1
+- **Data:** Contains attributes like `forceMajeure` (false), `penaltyPercentage` (10.5%), `capPercentage` (55), and `clauseId` ("demo-1").
+- **Template:** Points to the template URI `resource:org.accordproject.protocol@1.0.0.Template#latedelivery`.
+- **State:** 
+  - Last Trigger: Indicates a `LateDeliveryAndPenaltyRequest` with `forceMajeure` as false and `goodsValue` of 1000.
+  - Triggered At: "2026-03-28T21:58:32.493Z".
+- **Agreement Status:** DRAFT.
+
+The agreement is currently in draft status.
+
+--- usage ---
+turns:       2
+tool calls:  1
+tokens:      prompt=1331, completion=195, total=1526
+model:       gpt-4o-mini
+
+========================================================================
+PROMPT: Convert agreement 1 to markdown.
+------------------------------------------------------------------------
+[tool] -> convert_agreement({"id":"1","format":"markdown"})
+[tool] <- convert_agreement (250 bytes)
+
+--- assistant ---
+The agreement with ID 1 has been successfully converted to Markdown format. Here is the output:
+
+```markdown
+# Late Delivery and Penalty
+
+**Status:** DRAFT
+
+## Agreement Data
+
+```json
+{
+  "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+  "forceMajeure": false,
+  "penaltyPercentage": 10.5,
+  "capPercentage": 55,
+  "clauseId": "demo-1"
+}
+```
+```
+
+--- usage ---
+turns:       2
+tool calls:  1
+tokens:      prompt=1225, completion=129, total=1354
+model:       gpt-4o-mini
+
+========================================================================
+PROMPT: Trigger agreement 1 with goodsValue 140. Use the request $class that matches the template.
+------------------------------------------------------------------------
+[tool] -> get_agreement({"id":1})
+[tool] <- get_agreement (589 bytes)
+[tool] -> trigger_agreement({"id":"1","body":{"$class":"io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest","forceMajeure":false,"goodsValue":140}})
+[tool] <- trigger_agreement (368 bytes)
+
+--- assistant ---
+The request to trigger agreement 1 with a goods value of 140 has been successfully processed. The last trigger for this agreement now reflects the new goods value.
+
+--- usage ---
+turns:       3
+tool calls:  2
+tokens:      prompt=2297, completion=102, total=2399
+model:       gpt-4o-mini
+
+========================================================================
+PROMPT: Find any agreement that uses a late-delivery template, and tell me its current status.
+------------------------------------------------------------------------
+[tool] -> list_templates({})
+[tool] <- list_templates (685 bytes)
+[tool] -> list_agreements({})
+[tool] <- list_agreements (610 bytes)
+
+--- assistant ---
+I found an agreement using the Late Delivery and Penalty template. Its current status is "DRAFT."
+
+--- usage ---
+turns:       3
+tool calls:  2
+tokens:      prompt=2317, completion=43, total=2360
+model:       gpt-4o-mini
+
