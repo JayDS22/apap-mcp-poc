@@ -1,0 +1,21 @@
+{
+  "name": "apap-alternatives-openai-fn-calling",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Spike: drive APAP through OpenAI function-calling, for comparison vs MCP",
+  "type": "module",
+  "scripts": {
+    "chat": "tsx src/chat.ts",
+    "smoke": "tsx src/smoke.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "16.4.5",
+    "openai": "4.79.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "tsx": "4.19.3",
+    "typescript": "5.8.3"
+  }
+}
