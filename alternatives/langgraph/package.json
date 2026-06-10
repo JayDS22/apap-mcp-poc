@@ -1,0 +1,24 @@
+{
+  "name": "apap-alternatives-langgraph",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Spike: drive APAP through LangGraph.js, for comparison vs OpenAI fn-calling and MCP",
+  "type": "module",
+  "scripts": {
+    "chat": "tsx src/chat.ts",
+    "smoke": "tsx src/smoke.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/core": "0.3.40",
+    "@langchain/langgraph": "0.2.40",
+    "@langchain/openai": "0.3.16",
+    "dotenv": "16.4.5",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "tsx": "4.19.3",
+    "typescript": "5.8.3"
+  }
+}
