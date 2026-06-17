@@ -7,6 +7,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 COPY tsconfig.json ./
 COPY src/ ./src/
+COPY model/ ./model/
 RUN npm run build
 
 # ---- Runner ----
@@ -20,6 +21,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/model ./model
 COPY drizzle.config.ts ./
 COPY src/db/schema.ts ./src/db/schema.ts
 COPY startup.js ./

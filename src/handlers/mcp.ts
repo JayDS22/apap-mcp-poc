@@ -3,6 +3,8 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { isInitializeRequest, CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import * as crypto from 'crypto';
 import { z } from 'zod';
 
@@ -20,6 +22,28 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('mcp-handler');
 
+// Concerto-typed-context hint exposed via MCP InitializeResult.instructions.
+// Tells the model that response payloads are Concerto-serialized objects so it
+// can interpret `$class` discriminators directly, per accordproject/apap#185.
+const SERVER_INSTRUCTIONS = [
+  'Responses from this server are Concerto-serialized objects from the Accord',
+  'Project Agreement Protocol (APAP). Each resource carries a `$class`',
+  'discriminator (e.g. "org.accordproject.protocol@1.0.0.Template") identifying',
+  'its type and inheritance. The canonical Concerto model is available at',
+  '`apap://schema/protocol.cto` and can be read for type definitions.',
+].join(' ');
+
+// Cache the .cto bytes; read once on first request. Resolved relative to this
+// file so it works in both `tsx watch src/` (dev) and `node dist/` (prod).
+let cachedProtocolCto: string | null = null;
+function loadProtocolCto(): string {
+  if (cachedProtocolCto === null) {
+    const url = new URL('../../model/protocol.cto', import.meta.url);
+    cachedProtocolCto = readFileSync(fileURLToPath(url), 'utf-8');
+  }
+  return cachedProtocolCto;
+}
+
 // Session-to-transport maps. StreamableHTTP needs this so follow-up
 // requests get routed to the transport that handled initialization.
 const transports: Record<string, StreamableHTTPServerTransport> = {};
@@ -35,10 +59,26 @@ const sseTransports: Record<string, SSEServerTransport> = {};
 function createMcpServer(db: Database): McpServer {
   const server = new McpServer(
     { name: 'apap-mcp-server', version: '1.0.0' },
-    { capabilities: { logging: {} } },
+    { capabilities: { logging: {} }, instructions: SERVER_INSTRUCTIONS },
   );
 
   // -- Resources --
+
+  // Concerto protocol model. Clients (and LLMs) can read this to resolve
+  // `$class` strings to type definitions without hitting upstream codegen.
+  server.resource(
+    'protocol-schema',
+    'apap://schema/protocol.cto',
+    async (uri: URL) => ({
+      contents: [
+        {
+          uri: uri.toString(),
+          mimeType: 'text/x-concerto',
+          text: loadProtocolCto(),
+        },
+      ],
+    }),
+  );
 
   // List all templates
   server.resource('templates', 'apap://templates', async (uri: URL) => {
