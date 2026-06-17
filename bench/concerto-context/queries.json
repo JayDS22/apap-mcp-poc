@@ -56,7 +56,7 @@
   {
     "id": "tool-q2-get-template",
     "category": "tool-use",
-    "prompt": "Get template number 2.",
+    "prompt": "Get template number 1.",
     "expected": {
       "toolCalls": ["getTemplate"],
       "keywords": []

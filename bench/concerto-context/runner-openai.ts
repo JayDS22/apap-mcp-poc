@@ -1,29 +1,25 @@
 /**
- * Concerto-context A/B harness runner.
+ * Concerto-context A/B harness runner — OpenAI variant.
  *
- * Connects to a running MCP server (the one with PR #2's `instructions`
- * field + `apap://schema/protocol.cto` resource), pulls the typed-context
- * material once, then runs the same query set twice through Claude: once
- * without that material in the system prompt (control), once with it
- * (treatment). Records tool calls + final text per query and scores them
- * against the rubric in queries.json.
- *
- * See README.md for the methodology and rationale.
+ * Same methodology as runner.ts (the Anthropic variant): connect to the
+ * running MCP server, pull instructions + schema once, run each query through
+ * control (no system prompt) and treatment (system prompt with the typed-
+ * context material). The provider-specific differences live in `runQuery`.
  */
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const MCP_BASE_URL = process.env.MCP_BASE_URL ?? 'http://localhost:9000';
-const MODEL = process.env.BENCH_MODEL ?? 'claude-sonnet-4-6';
+const MODEL = process.env.BENCH_OPENAI_MODEL ?? 'gpt-4o';
 const QUERIES_PATH = process.env.BENCH_QUERIES ?? './queries.json';
 const MAX_TURNS = 8;
 
-if (!ANTHROPIC_API_KEY) {
-  console.error('ANTHROPIC_API_KEY is required.');
+if (!OPENAI_API_KEY) {
+  console.error('OPENAI_API_KEY is required.');
   process.exit(1);
 }
 
@@ -43,34 +39,33 @@ interface RunResult {
   queryId: string;
   category: string;
   variant: 'control' | 'treatment';
-  provider: 'anthropic';
+  provider: 'openai';
   toolCalls: string[];
   finalText: string;
   score: number;
   expectations: { tool: { hit: number; total: number }; keyword: { hit: number; total: number } };
 }
 
-type AnthropicTool = {
-  name: string;
-  description: string;
-  input_schema: Record<string, unknown>;
-};
+type OpenAITool = OpenAI.Chat.Completions.ChatCompletionTool;
 
 async function setupMcp(): Promise<{
   client: Client;
-  tools: AnthropicTool[];
+  tools: OpenAITool[];
   instructions: string;
   schemaText: string;
 }> {
   const transport = new StreamableHTTPClientTransport(new URL(`${MCP_BASE_URL}/mcp`));
-  const client = new Client({ name: 'bench-concerto-context', version: '1.0.0' });
+  const client = new Client({ name: 'bench-concerto-context-openai', version: '1.0.0' });
   await client.connect(transport);
 
   const toolsResult = await client.listTools();
-  const tools: AnthropicTool[] = toolsResult.tools.map((t) => ({
-    name: t.name,
-    description: t.description ?? '',
-    input_schema: t.inputSchema as Record<string, unknown>,
+  const tools: OpenAITool[] = toolsResult.tools.map((t) => ({
+    type: 'function',
+    function: {
+      name: t.name,
+      description: t.description ?? '',
+      parameters: t.inputSchema as Record<string, unknown>,
+    },
   }));
 
   const instructions = client.getInstructions() ?? '';
@@ -99,67 +94,66 @@ function buildSystemPrompt(variant: 'control' | 'treatment', instructions: strin
 async function runQuery(
   query: Query,
   variant: 'control' | 'treatment',
-  tools: AnthropicTool[],
+  tools: OpenAITool[],
   systemPrompt: string | undefined,
   mcpClient: Client,
-  anthropic: Anthropic,
+  openai: OpenAI,
 ): Promise<RunResult> {
-  const messages: Anthropic.MessageParam[] = [{ role: 'user', content: query.prompt }];
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  messages.push({ role: 'user', content: query.prompt });
+
   const toolCalls: string[] = [];
   let finalText = '';
 
   for (let turn = 0; turn < MAX_TURNS; turn++) {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
-      max_tokens: 1024,
       temperature: 0,
-      system: systemPrompt,
-      tools: tools as unknown as Anthropic.Tool[],
+      max_tokens: 1024,
+      tools,
       messages,
     });
 
-    const textBlocks = response.content.filter((b): b is Anthropic.TextBlock => b.type === 'text');
-    if (textBlocks.length > 0) {
-      finalText = textBlocks.map((b) => b.text).join('\n');
+    const choice = response.choices[0];
+    const message = choice.message;
+
+    if (message.content) {
+      finalText = message.content;
     }
 
-    const toolUseBlocks = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === 'tool_use');
-
-    if (response.stop_reason === 'end_turn' || toolUseBlocks.length === 0) {
+    if (!message.tool_calls || message.tool_calls.length === 0 || choice.finish_reason === 'stop') {
       break;
     }
 
-    messages.push({ role: 'assistant', content: response.content });
+    messages.push(message);
 
-    const toolResults: Anthropic.ToolResultBlockParam[] = [];
-    for (const toolUse of toolUseBlocks) {
-      toolCalls.push(toolUse.name);
+    for (const tc of message.tool_calls) {
+      if (tc.type !== 'function') continue;
+      toolCalls.push(tc.function.name);
+      let resultText: string;
+      let isError = false;
       try {
+        const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : {};
         const result = await mcpClient.callTool({
-          name: toolUse.name,
-          arguments: toolUse.input as Record<string, unknown>,
+          name: tc.function.name,
+          arguments: args as Record<string, unknown>,
         });
-        const resultText = Array.isArray(result.content)
+        resultText = Array.isArray(result.content)
           ? result.content
               .map((c) => (typeof (c as { text?: unknown }).text === 'string' ? (c as { text: string }).text : JSON.stringify(c)))
               .join('\n')
           : JSON.stringify(result);
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolUse.id,
-          content: resultText,
-        });
       } catch (err) {
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolUse.id,
-          content: `error: ${(err as Error).message}`,
-          is_error: true,
-        });
+        resultText = `error: ${(err as Error).message}`;
+        isError = true;
       }
+      messages.push({
+        role: 'tool',
+        tool_call_id: tc.id,
+        content: isError ? `[error] ${resultText}` : resultText,
+      });
     }
-
-    messages.push({ role: 'user', content: toolResults });
   }
 
   const toolHits = query.expected.toolCalls.filter((name) => toolCalls.includes(name)).length;
@@ -171,7 +165,7 @@ async function runQuery(
     queryId: query.id,
     category: query.category,
     variant,
-    provider: 'anthropic',
+    provider: 'openai',
     toolCalls,
     finalText: finalText.slice(0, 800),
     score,
@@ -187,33 +181,33 @@ async function main() {
   const queries: Query[] = JSON.parse(readFileSync(fileURLToPath(queriesUrl), 'utf-8'));
 
   const { client, tools, instructions, schemaText } = await setupMcp();
-  console.error(`Connected to ${MCP_BASE_URL}. Tools: ${tools.map((t) => t.name).join(', ')}`);
+  console.error(`Connected to ${MCP_BASE_URL}. Tools: ${tools.map((t) => t.function.name).join(', ')}`);
   console.error(`Instructions present: ${instructions.length > 0 ? `${instructions.length} chars` : 'NO'}`);
   console.error(`Schema resource: ${schemaText.length > 0 ? `${schemaText.length} chars` : 'NO'}`);
   console.error('');
 
-  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
   const controlSystem = buildSystemPrompt('control', instructions, schemaText);
   const treatmentSystem = buildSystemPrompt('treatment', instructions, schemaText);
 
   const results: RunResult[] = [];
   for (const query of queries) {
     console.error(`[control]   ${query.id}`);
-    results.push(await runQuery(query, 'control', tools, controlSystem, client, anthropic));
+    results.push(await runQuery(query, 'control', tools, controlSystem, client, openai));
     console.error(`[treatment] ${query.id}`);
-    results.push(await runQuery(query, 'treatment', tools, treatmentSystem, client, anthropic));
+    results.push(await runQuery(query, 'treatment', tools, treatmentSystem, client, openai));
   }
 
   await client.close();
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const outPath = fileURLToPath(new URL(`./results-${timestamp}.json`, import.meta.url));
-  writeFileSync(outPath, JSON.stringify({ provider: 'anthropic', model: MODEL, mcpBaseUrl: MCP_BASE_URL, timestamp, results }, null, 2));
+  const outPath = fileURLToPath(new URL(`./results-openai-${timestamp}.json`, import.meta.url));
+  writeFileSync(outPath, JSON.stringify({ provider: 'openai', model: MODEL, mcpBaseUrl: MCP_BASE_URL, timestamp, results }, null, 2));
   console.error(`\nWrote ${outPath}`);
 
   const controlMean = mean(results.filter((r) => r.variant === 'control').map((r) => r.score));
   const treatmentMean = mean(results.filter((r) => r.variant === 'treatment').map((r) => r.score));
-  console.error(`\nSummary: control=${controlMean.toFixed(3)}  treatment=${treatmentMean.toFixed(3)}  delta=${(treatmentMean - controlMean).toFixed(3)}`);
+  console.error(`\nSummary [openai]: control=${controlMean.toFixed(3)}  treatment=${treatmentMean.toFixed(3)}  delta=${(treatmentMean - controlMean).toFixed(3)}`);
 }
 
 function mean(xs: number[]): number {

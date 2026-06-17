@@ -1,16 +1,19 @@
 /**
  * Build a Markdown comparison report from one or more results-*.json files.
+ * Provider-aware: if results span multiple providers, aggregate per provider.
  *
  * Usage:
- *   npx tsx bench/concerto-context/report.ts results-2026-06-17T...json
  *   npx tsx bench/concerto-context/report.ts results-*.json > results.md
  */
 import { readFileSync } from 'node:fs';
+
+type Provider = 'anthropic' | 'openai';
 
 interface RunResult {
   queryId: string;
   category: string;
   variant: 'control' | 'treatment';
+  provider?: Provider;
   toolCalls: string[];
   finalText: string;
   score: number;
@@ -18,6 +21,7 @@ interface RunResult {
 }
 
 interface ResultsFile {
+  provider?: Provider;
   model: string;
   mcpBaseUrl: string;
   timestamp: string;
@@ -32,71 +36,107 @@ function fmt(x: number): string {
   return x.toFixed(3);
 }
 
+function deltaStr(d: number): string {
+  return (d >= 0 ? '+' : '') + fmt(d);
+}
+
 const files = process.argv.slice(2);
 if (files.length === 0) {
   console.error('Usage: npx tsx report.ts <results-*.json> [more.json...]');
   process.exit(1);
 }
 
-const runs: ResultsFile[] = files.map((f) => JSON.parse(readFileSync(f, 'utf-8')));
+const runs: ResultsFile[] = files.map((f) => {
+  const parsed = JSON.parse(readFileSync(f, 'utf-8')) as ResultsFile;
+  // Backfill provider on each result from file-level field if missing.
+  parsed.results.forEach((r) => {
+    if (!r.provider) r.provider = parsed.provider ?? 'anthropic';
+  });
+  return parsed;
+});
+
+const allResults = runs.flatMap((r) => r.results);
+const providers = Array.from(new Set(allResults.map((r) => r.provider!))).sort();
+const queryIds = Array.from(new Set(allResults.map((r) => r.queryId)));
+const categories = Array.from(new Set(allResults.map((r) => r.category)));
+
+const modelByProvider = new Map<Provider, string>();
+for (const r of runs) {
+  const p = r.provider ?? 'anthropic';
+  if (!modelByProvider.has(p)) modelByProvider.set(p, r.model);
+}
 
 console.log('# Concerto-context A/B results');
 console.log('');
-console.log(`Model: \`${runs[0].model}\``);
-console.log(`Runs aggregated: ${runs.length}`);
+console.log('Providers / models:');
+for (const p of providers) console.log(`- **${p}**: \`${modelByProvider.get(p) ?? '?'}\``);
+console.log('');
+console.log(`Runs aggregated: ${runs.length}.  Queries: ${queryIds.length}.  Temperature: 0.`);
 console.log('');
 
-const allResults = runs.flatMap((r) => r.results);
-
-const control = allResults.filter((r) => r.variant === 'control');
-const treatment = allResults.filter((r) => r.variant === 'treatment');
-
-console.log('## Aggregate');
+console.log('## Aggregate by provider');
 console.log('');
-console.log('| Variant   | Mean score | N  |');
-console.log('| --------- | ---------- | -- |');
-console.log(`| control   | ${fmt(mean(control.map((r) => r.score)))}      | ${control.length} |`);
-console.log(`| treatment | ${fmt(mean(treatment.map((r) => r.score)))}      | ${treatment.length} |`);
-console.log('');
-
-console.log('## By category');
-console.log('');
-console.log('| Category         | Control | Treatment | Delta  |');
-console.log('| ---------------- | ------- | --------- | ------ |');
-const categories = Array.from(new Set(allResults.map((r) => r.category)));
-for (const cat of categories) {
-  const c = mean(control.filter((r) => r.category === cat).map((r) => r.score));
-  const t = mean(treatment.filter((r) => r.category === cat).map((r) => r.score));
-  console.log(`| ${cat.padEnd(16)} | ${fmt(c)}   | ${fmt(t)}     | ${(t - c >= 0 ? '+' : '') + fmt(t - c)} |`);
+console.log('| Provider  | Control | Treatment | Delta  | N (per variant) |');
+console.log('| --------- | ------- | --------- | ------ | --------------- |');
+for (const p of providers) {
+  const c = allResults.filter((r) => r.provider === p && r.variant === 'control');
+  const t = allResults.filter((r) => r.provider === p && r.variant === 'treatment');
+  const cm = mean(c.map((r) => r.score));
+  const tm = mean(t.map((r) => r.score));
+  console.log(`| ${p.padEnd(9)} | ${fmt(cm)}   | ${fmt(tm)}     | ${deltaStr(tm - cm)} | ${c.length}              |`);
 }
 console.log('');
 
-console.log('## Per query');
+console.log('## By category (per provider)');
 console.log('');
-console.log('| Query                       | Control | Treatment | Delta  |');
-console.log('| --------------------------- | ------- | --------- | ------ |');
-const queryIds = Array.from(new Set(allResults.map((r) => r.queryId)));
-for (const qid of queryIds) {
-  const c = mean(control.filter((r) => r.queryId === qid).map((r) => r.score));
-  const t = mean(treatment.filter((r) => r.queryId === qid).map((r) => r.score));
-  console.log(`| ${qid.padEnd(27)} | ${fmt(c)}   | ${fmt(t)}     | ${(t - c >= 0 ? '+' : '') + fmt(t - c)} |`);
+for (const p of providers) {
+  console.log(`### ${p}`);
+  console.log('');
+  console.log('| Category         | Control | Treatment | Delta  |');
+  console.log('| ---------------- | ------- | --------- | ------ |');
+  for (const cat of categories) {
+    const c = allResults.filter((r) => r.provider === p && r.category === cat && r.variant === 'control');
+    const t = allResults.filter((r) => r.provider === p && r.category === cat && r.variant === 'treatment');
+    const cm = mean(c.map((r) => r.score));
+    const tm = mean(t.map((r) => r.score));
+    console.log(`| ${cat.padEnd(16)} | ${fmt(cm)}   | ${fmt(tm)}     | ${deltaStr(tm - cm)} |`);
+  }
+  console.log('');
 }
+
+console.log('## Per query (per provider)');
 console.log('');
+for (const p of providers) {
+  console.log(`### ${p}`);
+  console.log('');
+  console.log('| Query                          | Control | Treatment | Delta  |');
+  console.log('| ------------------------------ | ------- | --------- | ------ |');
+  for (const qid of queryIds) {
+    const c = allResults.filter((r) => r.provider === p && r.queryId === qid && r.variant === 'control');
+    const t = allResults.filter((r) => r.provider === p && r.queryId === qid && r.variant === 'treatment');
+    const cm = mean(c.map((r) => r.score));
+    const tm = mean(t.map((r) => r.score));
+    console.log(`| ${qid.padEnd(30)} | ${fmt(cm)}   | ${fmt(tm)}     | ${deltaStr(tm - cm)} |`);
+  }
+  console.log('');
+}
 
 console.log('## Sample outputs');
 console.log('');
 for (const qid of queryIds) {
-  const cRun = control.find((r) => r.queryId === qid);
-  const tRun = treatment.find((r) => r.queryId === qid);
-  if (!cRun || !tRun) continue;
   console.log(`### ${qid}`);
   console.log('');
-  console.log(`**control** (score ${fmt(cRun.score)}, tools: \`[${cRun.toolCalls.join(', ')}]\`)`);
-  console.log('');
-  console.log('> ' + cRun.finalText.replace(/\n/g, '\n> '));
-  console.log('');
-  console.log(`**treatment** (score ${fmt(tRun.score)}, tools: \`[${tRun.toolCalls.join(', ')}]\`)`);
-  console.log('');
-  console.log('> ' + tRun.finalText.replace(/\n/g, '\n> '));
-  console.log('');
+  for (const p of providers) {
+    const cRun = allResults.find((r) => r.provider === p && r.queryId === qid && r.variant === 'control');
+    const tRun = allResults.find((r) => r.provider === p && r.queryId === qid && r.variant === 'treatment');
+    if (!cRun || !tRun) continue;
+    console.log(`**${p} control** (score ${fmt(cRun.score)}, tools: \`[${cRun.toolCalls.join(', ')}]\`)`);
+    console.log('');
+    console.log('> ' + cRun.finalText.replace(/\n/g, '\n> '));
+    console.log('');
+    console.log(`**${p} treatment** (score ${fmt(tRun.score)}, tools: \`[${tRun.toolCalls.join(', ')}]\`)`);
+    console.log('');
+    console.log('> ' + tRun.finalText.replace(/\n/g, '\n> '));
+    console.log('');
+  }
 }
