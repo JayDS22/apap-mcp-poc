@@ -14,6 +14,7 @@ interface RunResult {
   category: string;
   variant: 'control' | 'treatment';
   provider?: Provider;
+  runIndex?: number;
   toolCalls: string[];
   finalText: string;
   score: number;
@@ -24,6 +25,7 @@ interface ResultsFile {
   provider?: Provider;
   model: string;
   mcpBaseUrl: string;
+  modelParams?: { temperature: number; max_tokens: number; runs: number; seed: number | null };
   timestamp: string;
   results: RunResult[];
 }
@@ -32,8 +34,19 @@ function mean(xs: number[]): number {
   return xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
 }
 
+function stdev(xs: number[]): number {
+  if (xs.length < 2) return 0;
+  const m = mean(xs);
+  const variance = xs.reduce((a, x) => a + (x - m) ** 2, 0) / (xs.length - 1);
+  return Math.sqrt(variance);
+}
+
 function fmt(x: number): string {
   return x.toFixed(3);
+}
+
+function fmtPM(m: number, sd: number): string {
+  return `${fmt(m)} ± ${fmt(sd)}`;
 }
 
 function deltaStr(d: number): string {
@@ -69,21 +82,25 @@ for (const r of runs) {
 console.log('# Concerto-context A/B results');
 console.log('');
 console.log('Providers / models:');
-for (const p of providers) console.log(`- **${p}**: \`${modelByProvider.get(p) ?? '?'}\``);
+for (const r of runs) {
+  const p = r.provider ?? 'anthropic';
+  const params = r.modelParams ? ` (temp=${r.modelParams.temperature}, max_tokens=${r.modelParams.max_tokens}, runs=${r.modelParams.runs}${r.modelParams.seed != null ? `, seed=${r.modelParams.seed}` : ''})` : '';
+  console.log(`- **${p}**: \`${r.model}\`${params}`);
+}
 console.log('');
-console.log(`Runs aggregated: ${runs.length}.  Queries: ${queryIds.length}.  Temperature: 0.`);
+console.log(`Files aggregated: ${runs.length}.  Queries: ${queryIds.length}.`);
 console.log('');
 
 console.log('## Aggregate by provider');
 console.log('');
-console.log('| Provider  | Control | Treatment | Delta  | N (per variant) |');
-console.log('| --------- | ------- | --------- | ------ | --------------- |');
+console.log('| Provider  | Control (mean ± sd) | Treatment (mean ± sd) | Delta  | N (per variant) |');
+console.log('| --------- | ------------------- | --------------------- | ------ | --------------- |');
 for (const p of providers) {
-  const c = allResults.filter((r) => r.provider === p && r.variant === 'control');
-  const t = allResults.filter((r) => r.provider === p && r.variant === 'treatment');
-  const cm = mean(c.map((r) => r.score));
-  const tm = mean(t.map((r) => r.score));
-  console.log(`| ${p.padEnd(9)} | ${fmt(cm)}   | ${fmt(tm)}     | ${deltaStr(tm - cm)} | ${c.length}              |`);
+  const c = allResults.filter((r) => r.provider === p && r.variant === 'control').map((r) => r.score);
+  const t = allResults.filter((r) => r.provider === p && r.variant === 'treatment').map((r) => r.score);
+  const cm = mean(c);
+  const tm = mean(t);
+  console.log(`| ${p.padEnd(9)} | ${fmtPM(cm, stdev(c))} | ${fmtPM(tm, stdev(t))} | ${deltaStr(tm - cm)} | ${c.length} |`);
 }
 console.log('');
 
