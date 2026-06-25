@@ -166,6 +166,58 @@ describe('MCP StreamableHTTP Full Lifecycle', () => {
     }
   });
 
+  // Forward-compatibility check for SEP-2549 ("CacheableResult", MCP 2026-07-28 RC):
+  // ReadResource responses must carry per-entry ttlMs + cacheScope hints so caching
+  // proxies can honor them once the SDK accepts the fields at the top level.
+  it('initialize -> read apap://agreements -> contents include ttlMs + cacheScope', async () => {
+    const db = createMockDb();
+    const app = createTestApp(db);
+    const { port, close } = await listen(app);
+    const baseUrl = `http://127.0.0.1:${port}`;
+
+    try {
+      const initResult = await sendMcpRequest(baseUrl, null, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        },
+      });
+
+      await fetch(`${baseUrl}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream, application/json',
+          'mcp-session-id': initResult.sessionId,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+      });
+
+      const readResult = await sendMcpRequest(baseUrl, initResult.sessionId, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'resources/read',
+        params: { uri: 'apap://agreements' },
+      });
+
+      const contents = readResult.body?.result?.contents;
+      expect(contents).toBeDefined();
+      expect(contents.length).toBeGreaterThan(0);
+      // Existing assertions: uri + mimeType must still be set on each entry.
+      expect(contents[0].uri).toMatch(/^apap:\/\/agreements\//);
+      expect(contents[0].mimeType).toBe('application/json');
+      // New SEP-2549 hints: agreement-list is short-lived and per-client.
+      expect(contents[0].ttlMs).toBe(30_000);
+      expect(contents[0].cacheScope).toBe('private');
+    } finally {
+      close();
+    }
+  });
+
   it('initialize -> call getAgreement tool -> verify response', async () => {
     const db = createMockDb();
     const app = createTestApp(db);
