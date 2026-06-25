@@ -26,15 +26,17 @@ const logger = createLogger('mcp-handler');
 // Defaults are chosen by mutability of each resource: lists are volatile and
 // per-client (private), single templates are hash-immutable (public, 5min), and
 // single agreements are short-lived because the row can be triggered/updated.
-// `apap://schema/protocol.cto` (24h, public) is included for the branch that
-// already ships the schema resource so the constant table can travel with it.
 // Both fields are emitted alongside `uri`/`mimeType`/`text` so the SEP wire
 // shape lands as-is once the SDK accepts them at the top level; the current
 // SDK's request/response path is pass-through (no schema strip), so they reach
 // MCP clients today as forward-compatible hints.
+//
+// TODO: once the Concerto schema resource (apap://schema/protocol.cto) lands
+// on main via PR #199, re-add a `schema` key with
+// { ttlMs: 86_400_000, cacheScope: 'public' } since the bundled .cto ships
+// with the build and only turns over on redeploy.
 type CacheScope = 'public' | 'private';
 interface CacheHint { ttlMs: number; cacheScope: CacheScope }
-const CACHE_SCHEMA: CacheHint = { ttlMs: 86_400_000, cacheScope: 'public' };
 const CACHE_TEMPLATE_LIST: CacheHint = { ttlMs: 60_000, cacheScope: 'private' };
 const CACHE_TEMPLATE_ITEM: CacheHint = { ttlMs: 300_000, cacheScope: 'public' };
 const CACHE_AGREEMENT_LIST: CacheHint = { ttlMs: 30_000, cacheScope: 'private' };
@@ -42,7 +44,6 @@ const CACHE_AGREEMENT_ITEM: CacheHint = { ttlMs: 30_000, cacheScope: 'private' }
 
 // Re-export for tests and any future consumers; keeps the cache policy in one place.
 export const CACHE_HINTS = {
-  schema: CACHE_SCHEMA,
   templateList: CACHE_TEMPLATE_LIST,
   templateItem: CACHE_TEMPLATE_ITEM,
   agreementList: CACHE_AGREEMENT_LIST,
@@ -71,9 +72,8 @@ function createMcpServer(db: Database): McpServer {
 
   // List all templates.
   // Cache fields (ttlMs/cacheScope) mirror SEP-2549; the SDK's TS types for
-  // ReadResourceResult.contents[] do not yet allow them at the top level, but
-  // the SDK's request/response path is pass-through, so the cast keeps the
-  // forward-compatible shape on the wire today.
+  // ReadResourceResult.contents[] are augmented in src/types/mcp-augmentation.d.ts
+  // so the spread typechecks without per-callsite casts.
   server.resource('templates', 'apap://templates', async (uri: URL) => {
     const templates = await listTemplates(db);
     return {
@@ -82,7 +82,7 @@ function createMcpServer(db: Database): McpServer {
         mimeType: 'application/json' as const,
         text: JSON.stringify(t),
         ...CACHE_TEMPLATE_LIST,
-      })) as unknown as Array<{ uri: string; mimeType: string; text: string }>,
+      })),
     };
   });
 
@@ -95,7 +95,7 @@ function createMcpServer(db: Database): McpServer {
         mimeType: 'application/json' as const,
         text: JSON.stringify({ ...a.data as object, $identifier: a.id }, null, 2),
         ...CACHE_AGREEMENT_LIST,
-      })) as unknown as Array<{ uri: string; mimeType: string; text: string }>,
+      })),
     };
   });
 
@@ -125,7 +125,7 @@ function createMcpServer(db: Database): McpServer {
             text: JSON.stringify(agreement),
             ...CACHE_AGREEMENT_ITEM,
           },
-        ] as unknown as Array<{ uri: string; mimeType: string; text: string }>,
+        ],
       };
     },
   );
@@ -156,7 +156,7 @@ function createMcpServer(db: Database): McpServer {
             text: JSON.stringify(template),
             ...CACHE_TEMPLATE_ITEM,
           },
-        ] as unknown as Array<{ uri: string; mimeType: string; text: string }>,
+        ],
       };
     },
   );
