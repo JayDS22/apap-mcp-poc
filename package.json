@@ -17,7 +17,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src/ __tests__/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bench:concerto": "tsx bench/concerto-context/runner.ts",
+    "bench:concerto:openai": "tsx bench/concerto-context/runner-openai.ts",
+    "bench:concerto:report": "tsx bench/concerto-context/report.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
@@ -30,6 +33,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.40.0",
+    "openai": "^4.77.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.0",
     "@types/pg": "^8.11.11",

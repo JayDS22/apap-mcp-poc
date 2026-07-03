@@ -1,0 +1,406 @@
+{
+  "provider": "openai",
+  "model": "gpt-4o",
+  "mcpBaseUrl": "http://localhost:9000",
+  "timestamp": "2026-06-17T13-42-55",
+  "results": [
+    {
+      "queryId": "schema-q1-template-class",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In the Accord Project protocol, the `$class` discriminator string that identifies a Template object is typically `\"org.accordproject.cicero.contract.Template\"`. This string is used to distinguish Template objects from other types of objects within the protocol.",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q1-template-class",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "The `$class` discriminator string that identifies a Template object in this protocol is `\"org.accordproject.protocol@1.0.0.Template\"`.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q2-agreement-fields",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In this protocol's type system, an Agreement typically carries the following fields:\n\n1. **Agreement ID**: A unique identifier for the agreement.\n2. **Template ID**: The identifier of the template that the agreement is based on.\n3. **State**: The current state of the agreement (e.g., draft, active, completed).\n4. **Parties**: The entities involved in the agreement, which may include individuals or organizations.\n5. **Terms**: The specific terms and conditions outlined in the agreement.\n6. **Signatures**: Information about the signatures required or obtained for the agreement.\n7. **Effective Date**: The date when the agreement becomes effective.\n8. **Expiration Date**: The date when the agreement expires or is no longer valid.\n9. **Metadata**: Additional metadata related to the agreement, s",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q2-agreement-fields",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "An `Agreement` in this protocol's type system carries the following fields:\n\n- `uri`: A URI that uniquely identifies the agreement.\n- `data`: A JSON object representing the data for the agreement, which is an instance of the data for its template.\n- `template`: A reference to the `Template` that the agreement is based on.\n- `state` (optional): A JSON object representing the runtime state of the agreement.\n- `agreementStatus`: An `AgreementStatusType` enum indicating the current status of the agreement. Possible values are `DRAFT`, `SIGNNG`, `COMPLETED`, and `SUPERSEDED`.\n- `agreementParties` (optional): An array of `AgreementParty` participants representing the parties to the agreement.\n- `signatures` (optional): An array of `Signature` concepts representing the signatures of the parties t",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q3-trigger-types",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In the context of a protocol involving `TriggerRequest` and `TriggerResponse`, the relationship between these two entities can be understood as follows:\n\n1. **TriggerRequest**:\n   - This is typically a request object that is sent to initiate a specific action or process within a system. It contains the necessary information and parameters required to perform the action.\n   - In the context of agreements or contracts, a `TriggerRequest` might include data that needs to be evaluated against the logic of an agreement. This could involve sending JSON data that matches a specific schema defined by the agreement's template.\n\n2. **TriggerResponse**:\n   - This is the response object that is returned after the `TriggerRequest` has been processed. It contains the results of the action or process tha",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q3-trigger-types",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In the Accord Project Agreement Protocol, the `TriggerRequest` and `TriggerResponse` concepts are related as part of the process of triggering an agreement's logic with a JSON payload.\n\n- **TriggerRequest**: This concept represents the request to trigger a function within an agreement. It contains a single field, `payload`, which is a JSON object. This payload is the input data that will be used to evaluate the logic of the agreement. The schema for this JSON object must match one of the transaction types defined in the model for the agreement's template.\n\n- **TriggerResponse**: This concept represents the response received after triggering the function with the `TriggerRequest`. It contains several fields:\n  - `result`: An optional JSON field that holds the result of the triggered functio",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q4-class-discriminator",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "The `$class` field in JSON objects returned from this server typically signifies the fully qualified name of the class or type of the object. This is often used in systems that rely on a specific data model or schema, such as those using Accord Project templates, to identify the type of data being handled. It helps in deserializing the JSON object back into the appropriate class or type in the application, ensuring that the data is processed correctly according to its defined structure and behavior.",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q4-class-discriminator",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "The `$class` field in JSON objects returned from this server signifies the type of the object. It acts as a discriminator to identify the specific type and inheritance of the object within the Accord Project Agreement Protocol (APAP) model. This allows clients to understand the structure and semantics of the data they are working with, as each `$class` corresponds to a specific concept or resource defined in the protocol's Concerto model.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q5-model-element",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In the context of this protocol, \"Agreement\" and \"Template\" are not the same kind of model element, though they are related.\n\n1. **Template**: A Template is a predefined structure or blueprint that outlines the terms, conditions, and logic for a specific type of agreement. It serves as a model or framework that can be used to create multiple agreements of the same type. Templates define the schema, including the required and optional fields, and the logic that governs how agreements based on the template should behave.\n\n2. **Agreement**: An Agreement is an instance created from a Template. It represents a specific contract or arrangement between parties, filled with actual data and terms as per the template's structure. Agreements are the realized versions of templates, containing specific",
+      "score": 0,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "schema-q5-model-element",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "In the Accord Project Agreement Protocol (APAP), Agreement and Template are not the same kind of model element. They are distinct concepts with different roles and attributes.\n\n1. **Template**:\n   - A Template is a resource identified by a URI and represents a reusable contract or document structure. It includes metadata, a model for the data structure, the text of the template, and logic that can be executed. The Template is essentially a blueprint for creating agreements. It contains elements such as:\n     - `uri`: A unique identifier for the template.\n     - `author`, `displayName`, `version`, `description`, `license`: Metadata about the template.\n     - `templateModel`: The data model associated with the template.\n     - `text`: The textual content of the template.\n     - `logic`: The ",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "tool-q1-get-agreement",
+      "category": "tool-use",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "The agreement with ID 1 has the following details:\n\n- **ID**: 1\n- **URI**: apap://bench-agreement\n- **Data Class**: io.bench@1.0.0.TemplateModel\n- **Clause ID**: bench-1\n- **Template**: resource:org.accordproject.protocol@1.0.0.Template#bench\n- **Agreement Status**: DRAFT\n\nThere are no parties, signatures, history entries, or attachments associated with this agreement at the moment.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q1-get-agreement",
+      "category": "tool-use",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "The agreement with ID 1 has been retrieved. Here are the details:\n\n- **URI**: apap://bench-agreement\n- **Data**: \n  - **Class**: io.bench@1.0.0.TemplateModel\n  - **Clause ID**: bench-1\n- **Template**: resource:org.accordproject.protocol@1.0.0.Template#bench\n- **Agreement Status**: DRAFT\n\nThere are no agreement parties, signatures, history entries, or attachments associated with this agreement.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q2-get-template",
+      "category": "tool-use",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here is the information for Template number 1:\n\n- **ID**: 1\n- **URI**: resource:org.accordproject.protocol@1.0.0.Template#bench\n- **Author**: bench\n- **Display Name**: Bench Template\n- **Version**: 1.0.0\n- **Description**: bench\n- **License**: Apache-2.0\n- **Keywords**: bench\n- **Metadata**:\n  - **Runtime**: typescript\n  - **Template Type**: clause\n  - **Cicero Version**: 0.25.x\n- **Template Model**:\n  - **Type Name**: Bench\n  - **Model**: No CTO files provided\n- **Text**: bench\n\nIf you need more details or specific information, feel free to ask!",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q2-get-template",
+      "category": "tool-use",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here is the information for template number 1:\n\n- **URI**: `resource:org.accordproject.protocol@1.0.0.Template#bench`\n- **Author**: bench\n- **Display Name**: Bench Template\n- **Version**: 1.0.0\n- **Description**: bench\n- **License**: Apache-2.0\n- **Keywords**: bench\n- **Metadata**:\n  - **Runtime**: typescript\n  - **Template Type**: clause\n  - **Cicero Version**: 0.25.x\n- **Template Model**:\n  - **Type Name**: Bench\n  - **Model**: CTO Model with no files\n- **Text**: \"bench\"\n- **Logic**: None\n- **Sample Request**: None\n\nIf you need more details or have any specific questions about this template, feel free to ask!",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q3-convert-html",
+      "category": "tool-use",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [],
+      "finalText": "Could you please provide the agreement ID for the agreement you would like to convert to HTML format?",
+      "score": 0,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q3-convert-html",
+      "category": "tool-use",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [
+        "convert-agreement-to-format"
+      ],
+      "finalText": "The agreement has been successfully converted to HTML format. Here is the HTML content:\n\n```html\n<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\">\n<title>Bench Template</title>\n<style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem}\npre{background:#f5f5f5;padding:1rem;overflow-x:auto;border-radius:4px}\n.status{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.85rem;\nbackground:#e8f5e9;color:#2e7d32}</style></head><body>\n<h1>Bench Template</h1>\n<p>Status: <span class=\"status\">DRAFT</span></p>\n<h2>Agreement Data</h2>\n<pre>{\n  &quot;$class&quot;: &quot;io.bench@1.0.0.TemplateModel&quot;,\n  &quot;clauseId&quot;: &quot;bench-1&quot;\n}</pre>\n</body></html>\n```\n\nYou can use this HTML code to display the agreement in a web browser.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q1-fetch-and-classify",
+      "category": "mixed",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "The agreement with ID 1 carries the `$class` \"io.bench@1.0.0.TemplateModel\".",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q1-fetch-and-classify",
+      "category": "mixed",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "The agreement with ID 1 carries the `$class` \"io.bench@1.0.0.TemplateModel\".",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q2-fetch-and-explain",
+      "category": "mixed",
+      "variant": "control",
+      "provider": "openai",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "The template with ID 1 is a \"Bench Template\" in the Concerto model. Here's a breakdown of its structure:\n\n- **Type**: The template is of type \"clause\" as indicated in the metadata.\n- **Runtime**: It uses the \"typescript\" runtime.\n- **Cicero Version**: It is compatible with Cicero version \"0.25.x\".\n- **Template Model**: The model is defined with a type name \"Bench\". However, the CTO model files are empty, indicating that there are no specific model definitions provided in this template.\n- **Text**: The template text is simply \"bench\".\n\nThis template is essentially a basic structure with minimal content and no specific logic or sample requests defined. It serves as a placeholder or a starting point for further development.",
+      "score": 0.6666666666666666,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q2-fetch-and-explain",
+      "category": "mixed",
+      "variant": "treatment",
+      "provider": "openai",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "The object retrieved is of the type `Template` in the Concerto model. Here's a breakdown of its structure according to the model:\n\n- **URI**: A unique identifier for the template.\n- **Author**: The creator of the template.\n- **DisplayName**: A human-readable name for the template.\n- **Version**: The version of the template.\n- **Description**: A brief description of the template.\n- **License**: The license under which the template is distributed.\n- **Keywords**: Keywords associated with the template for searchability.\n- **Metadata**: Contains information about the runtime, template type, and Cicero version.\n- **Logo**: An optional blob for the template's logo.\n- **TemplateModel**: Describes the concept declaration associated with the template, including the type name and an optional inline ",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    }
+  ]
+}

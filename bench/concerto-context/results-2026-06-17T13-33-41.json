@@ -1,0 +1,391 @@
+{
+  "model": "claude-sonnet-4-6",
+  "mcpBaseUrl": "http://localhost:9000",
+  "timestamp": "2026-06-17T13-33-41",
+  "results": [
+    {
+      "queryId": "schema-q1-template-class",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "toolCalls": [
+        "getTemplate",
+        "getTemplate",
+        "getTemplate"
+      ],
+      "finalText": "Unfortunately, I wasn't able to retrieve a Template object — all attempts returned an internal error, likely because I was guessing at template IDs without a known valid one.\n\nTo answer your question accurately, I'd need a **valid template ID** to fetch a real Template object and inspect its `$class` field. Could you provide one? For example:\n\n- A specific template ID you're working with (e.g., `\"late-payment-penalty@1.0.0\"`)\n- Or any agreement ID, which I can use to look up its associated template\n\nOnce I have a valid ID, I can retrieve the object and show you the exact `$class` discriminator string.",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q1-template-class",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "toolCalls": [],
+      "finalText": "Based on the Concerto protocol model provided, a **Template** object is identified by the following `$class` discriminator string:\n\n```\norg.accordproject.protocol@1.0.0.Template\n```\n\nThis is derived from the namespace and concept name defined in the model:\n\n- **Namespace:** `org.accordproject.protocol@1.0.0`\n- **Concept name:** `Template`\n\nIn Concerto, the `$class` discriminator is always the **fully qualified type name**, formed by combining the namespace with the concept name using a `.` separator.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q2-agreement-fields",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "toolCalls": [],
+      "finalText": "Let me look up the Agreement type for you. I'll need to find a template to examine its model. Could you provide a **template ID** or **agreement ID** so I can retrieve the relevant model and inspect the `Agreement` type?",
+      "score": 0,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q2-agreement-fields",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "toolCalls": [],
+      "finalText": "Based on the Concerto protocol model provided in my system context, here is a full breakdown of every field carried by the **`Agreement`** concept:\n\n---\n\n### `Agreement` — identified by `uri`\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `uri` | `URI` (scalar String) | ✅ Yes | Unique identifier for the agreement |\n| `data` | `JSON` (scalar String) | ✅ Yes | Instance data conforming to the template's model type |\n| `template` | → `Template` (relationship) | ✅ Yes | Reference to the template this agreement is an instance of |\n| `state` | `JSON` (scalar String) | ❌ Optional | Runtime state of the agreement |\n| `agreementStatus` | `AgreementStatusType` (enum) | ✅ Yes | Current status: `DRAFT`, `SIGNNG`, `COMPLETED`, or `SUPERSEDED` |\n| `agreementParties` | `AgreementParty[]` | ❌ Opt",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q3-trigger-types",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "toolCalls": [],
+      "finalText": "I'd be happy to help explain the relationship between `TriggerRequest` and `TriggerResponse`, but I'll need to look at a specific template or agreement to do so. Could you please provide me with a **template ID** or **agreement ID** for the protocol you're referring to? That way I can retrieve the relevant model and give you an accurate description.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q3-trigger-types",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "toolCalls": [],
+      "finalText": "Based on the Concerto protocol model provided directly in my context, here is a description of the relationship between `TriggerRequest` and `TriggerResponse`:\n\n---\n\n## `TriggerRequest` and `TriggerResponse`\n\nThese two concepts form the **input/output pair** for executing (or \"triggering\") the logic of an agreement. They are not formally linked by a Concerto relationship (`-->`) but are **semantically coupled** as the request and response of the same operation.\n\n---\n\n### `TriggerRequest`\n```\nconcept TriggerRequest {\n    o JSON payload\n}\n```\n- Wraps a **JSON payload** to be sent to an agreement's logic engine.\n- The `payload` must conform to one of the **transaction types** that extend `Request` as defined in the agreement's template model.\n- It is the **input** to the trigger operation.\n\n-",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q4-class-discriminator",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "toolCalls": [],
+      "finalText": "The `$class` field is not something I can directly answer from documentation or built-in knowledge about this specific server. However, I can investigate by retrieving an example agreement or template to observe the structure of the returned JSON objects. Let me look into this for you!\n\nThat said, based on common patterns in **Accord Project** (which this server appears to be part of), the `$class` field is a **fully qualified type identifier** used in the **Concerto modeling language**. It signifies:\n\n1. **The type/class of the object** – It identifies which class (defined in a Concerto model) the JSON object is an instance of.\n2. **Namespace + Class Name** – The value is typically in the format `namespace.ClassName` (e.g., `org.accordproject.payment.PaymentRequest`), combining the model'",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q4-class-discriminator",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "toolCalls": [],
+      "finalText": "The `$class` field is a **Concerto discriminator** that identifies the **fully qualified type** of a JSON object returned from the server.\n\nSpecifically, it tells you:\n\n1. **The type of the object** – It maps the JSON object to a specific concept, participant, transaction, or enum defined in a Concerto model. For example:\n   - `\"$class\": \"org.accordproject.protocol@1.0.0.Template\"` → the object is a `Template`\n   - `\"$class\": \"org.accordproject.protocol@1.0.0.Agreement\"` → the object is an `Agreement`\n\n2. **The namespace and version** – The value is a *fully qualified type name* (FQTN) in the format:\n   ```\n   <namespace>@<version>.<TypeName>\n   ```\n   This tells you exactly which version of which namespace the type belongs to, avoiding ambiguity across different models or versions.\n\n3. **",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "schema-q5-model-element",
+      "category": "schema-knowledge",
+      "variant": "control",
+      "toolCalls": [],
+      "finalText": "Great question! Let me look up both an agreement and a template to compare them. However, I don't have any specific IDs to look up right now — and I can only retrieve these elements **by ID** using the available tools.\n\nCould you provide:\n1. An **Agreement ID** to look up\n2. A **Template ID** to look up\n\nOnce you supply those, I can retrieve both and give you a detailed, concrete comparison of what each model element contains and how they differ.\n\nThat said, based on the available tools alone, I can already offer some **conceptual distinctions**:\n\n---\n\n### 🔍 Agreement vs. Template — Conceptual Difference\n\n| Feature | **Template** | **Agreement** |\n|---|---|---|\n| **What it is** | A reusable blueprint or definition | A specific instance created from a template |\n| **Contains** | Logic, mod",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "schema-q5-model-element",
+      "category": "schema-knowledge",
+      "variant": "treatment",
+      "toolCalls": [],
+      "finalText": "Great question! No, **Agreement** and **Template** are not the same kind of model element. Here's a breakdown of each:\n\n---\n\n### 🗂️ `Template` — a `concept`\n\n```\n@resource\n@description(\"An Accord Project template\")\nconcept Template identified by uri { ... }\n```\n\n`Template` is a **concept** in the Concerto model. Specifically, it is a **resource concept** (annotated with `@resource`) that is **identified by** its `uri` field. In Concerto:\n\n- A **concept** is a structured data type — essentially a class with fields but **no transactional or participant semantics**.\n- Being `identified by` means it is a **uniquely identifiable entity** (like a keyed record), distinguishable by its `uri`.\n- The `@resource` annotation marks it as a top-level, independently addressable resource.\n\n`Template` rep",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 0,
+          "total": 0
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "tool-q1-get-agreement",
+      "category": "tool-use",
+      "variant": "control",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "Here are the details of the agreement with ID **1**:\n\n- **ID:** 1\n- **URI:** `apap://bench-agreement`\n- **Status:** DRAFT\n- **Template:** `bench` (from `org.accordproject.protocol@1.0.0`)\n- **Class:** `io.bench@1.0.0.TemplateModel`\n- **Clause ID:** `bench-1`\n- **Template Hash:** N/A\n- **State:** N/A\n- **Agreement Parties:** N/A\n- **Signatures:** N/A\n- **History Entries:** N/A\n- **Attachments:** N/A\n\nThe agreement is currently in **DRAFT** status and is associated with the `bench` template.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q1-get-agreement",
+      "category": "tool-use",
+      "variant": "treatment",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "Here are the details of the agreement with ID **1**:\n\n| Field | Value |\n|---|---|\n| **URI** | `apap://bench-agreement` |\n| **Template** | `bench` |\n| **Status** | `DRAFT` |\n| **State** | None |\n| **Parties** | None |\n| **Signatures** | None |\n| **History Entries** | None |\n| **Attachments** | None |\n\n**Data:**\n- **Class:** `io.bench@1.0.0.TemplateModel`\n- **Clause ID:** `bench-1`\n\nThe agreement is currently in **DRAFT** status, meaning no signatories have signed it yet. It is an instance of the `bench` template and contains minimal data at this stage.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q2-get-template",
+      "category": "tool-use",
+      "variant": "control",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here are the details for **Template #1**:\n\n- **ID:** 1\n- **Display Name:** Bench Template\n- **Author:** bench\n- **Version:** 1.0.0\n- **Description:** bench\n- **License:** Apache-2.0\n- **Keywords:** bench\n- **Template Type:** Clause\n- **Runtime:** TypeScript\n- **Cicero Version:** 0.25.x\n- **Template Text:** bench\n\nThis appears to be a basic bench template. Let me know if you'd like to do anything further with it!",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q2-get-template",
+      "category": "tool-use",
+      "variant": "treatment",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here are the details for **Template #1**:\n\n| Field | Value |\n|---|---|\n| **URI** | `resource:org.accordproject.protocol@1.0.0.Template#bench` |\n| **Display Name** | Bench Template |\n| **Author** | bench |\n| **Version** | 1.0.0 |\n| **Description** | bench |\n| **License** | Apache-2.0 |\n| **Keywords** | bench |\n| **Template Type** | clause |\n| **Runtime** | TypeScript |\n| **Cicero Version** | 0.25.x |\n| **Template Model Type** | Bench |\n| **Template Text** | bench |\n| **Logic** | None |\n| **Sample Request** | None |\n\nThis is a simple \"Bench\" template with no logic or sample request defined. It uses TypeScript as its runtime and is a clause-type template.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q3-convert-html",
+      "category": "tool-use",
+      "variant": "control",
+      "toolCalls": [
+        "convert-agreement-to-format"
+      ],
+      "finalText": "Agreement 1 has been successfully converted to HTML format! Here's a summary of the output:\n\n- **Title:** Bench Template\n- **Status:** DRAFT\n- **Agreement Data:**\n  - **Class:** `io.bench@1.0.0.TemplateModel`\n  - **Clause ID:** `bench-1`\n\nThe HTML includes basic styling with a clean layout, a status badge, and the agreement data displayed in a formatted code block. Let me know if you need anything else!",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "tool-q3-convert-html",
+      "category": "tool-use",
+      "variant": "treatment",
+      "toolCalls": [
+        "convert-agreement-to-format"
+      ],
+      "finalText": "Agreement 1 has been successfully converted to HTML format! Here's a summary of what was returned:\n\n- **Title:** Bench Template\n- **Status:** DRAFT\n- **Agreement Data:** An instance of `io.bench@1.0.0.TemplateModel` with a `clauseId` of `\"bench-1\"`.\n\nThe HTML includes basic styling (sans-serif font, a styled status badge, and a code block for the agreement data) and is ready to be rendered in a browser or embedded in a web page. Let me know if you need anything else!",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 0
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q1-fetch-and-classify",
+      "category": "mixed",
+      "variant": "control",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "Agreement 1 carries the following `$class`:\n\n**`io.bench@1.0.0.TemplateModel`**\n\nThis value is found within the `data` object of the agreement, identifying the data model class associated with this agreement's template.",
+      "score": 0.5,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 0,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q1-fetch-and-classify",
+      "category": "mixed",
+      "variant": "treatment",
+      "toolCalls": [
+        "getAgreement"
+      ],
+      "finalText": "Agreement 1 carries the `$class`:\n\n> **`org.accordproject.protocol@1.0.0.Agreement`**\n\nThis is inferred from the Concerto protocol model — the resource returned is an instance of the `Agreement` concept (identified by its `uri: \"apap://bench-agreement\"`), which is defined in the `org.accordproject.protocol@1.0.0` namespace.\n\nAdditionally, the **nested `data` object** inside the agreement carries its own `$class`:\n\n> **`io.bench@1.0.0.TemplateModel`**\n\nThis represents the specific template data model instance associated with this agreement.",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 1,
+          "total": 1
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q2-fetch-and-explain",
+      "category": "mixed",
+      "variant": "control",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here's a breakdown of **Template 1** and its Concerto model:\n\n---\n\n### 📄 Template Overview\n- **ID:** 1\n- **Display Name:** Bench Template\n- **Author:** bench\n- **Version:** 1.0.0\n- **Type:** Clause\n- **License:** Apache-2.0\n\n---\n\n### 🧩 Concerto Model Explanation\n\nThe `templateModel` field describes the data model for this template using the **Concerto modeling language**. Here's what it contains:\n\n```json\n{\n  \"$class\": \"org.accordproject.protocol@1.0.0.TemplateModel\",\n  \"typeName\": \"Bench\",\n  \"model\": {\n    \"$class\": \"org.accordproject.protocol@1.0.0.CtoModel\",\n    \"ctoFiles\": []\n  }\n}\n```\n\n#### Key Points:\n\n1. **`$class: org.accordproject.protocol@1.0.0.TemplateModel`**\n   This object is an instance of the `TemplateModel` concept defined in the `org.accordproject.protocol` namespace at ",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    },
+    {
+      "queryId": "mixed-q2-fetch-and-explain",
+      "category": "mixed",
+      "variant": "treatment",
+      "toolCalls": [
+        "getTemplate"
+      ],
+      "finalText": "Here's a breakdown of what was returned and how it maps to the Concerto model:\n\n---\n\n## 🧩 What Kind of Object Is It?\n\nThe returned object is a **`Template`** — specifically an instance of:\n\n```\norg.accordproject.protocol@1.0.0.Template\n```\n\n---\n\n## 📐 Concerto Model Definition\n\nIn the APAP Concerto model, `Template` is defined as:\n\n```concerto\n@resource\n@description(\"An Accord Project template\")\nconcept Template identified by uri {\n    o URI uri\n    o String author\n    o String displayName optional\n    o String version\n    o String description optional\n    o String license\n    o String[] keywords optional\n    o TemplateMetadata metadata\n    o Blob logo optional\n    o TemplateModel templateModel\n    o Text text\n    o Logic logic optional\n    o JSON sampleRequest optional\n}\n```\n\nKey charact",
+      "score": 1,
+      "expectations": {
+        "tool": {
+          "hit": 1,
+          "total": 1
+        },
+        "keyword": {
+          "hit": 2,
+          "total": 2
+        }
+      }
+    }
+  ]
+}

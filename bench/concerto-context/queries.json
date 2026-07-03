@@ -1,0 +1,92 @@
+[
+  {
+    "id": "schema-q1-template-class",
+    "category": "schema-knowledge",
+    "prompt": "What `$class` discriminator string identifies a Template object in this protocol?",
+    "expected": {
+      "toolCalls": [],
+      "keywords": ["org.accordproject.protocol", "Template"]
+    }
+  },
+  {
+    "id": "schema-q2-agreement-fields",
+    "category": "schema-knowledge",
+    "prompt": "What fields does an Agreement carry in this protocol's type system?",
+    "expected": {
+      "toolCalls": [],
+      "keywords": ["data", "agreementStatus"]
+    }
+  },
+  {
+    "id": "schema-q3-trigger-types",
+    "category": "schema-knowledge",
+    "prompt": "Describe the relationship between TriggerRequest and TriggerResponse in this protocol.",
+    "expected": {
+      "toolCalls": [],
+      "keywords": ["TriggerRequest", "TriggerResponse"]
+    }
+  },
+  {
+    "id": "schema-q4-class-discriminator",
+    "category": "schema-knowledge",
+    "prompt": "What does the `$class` field signify on JSON objects returned from this server?",
+    "expected": {
+      "toolCalls": [],
+      "keywords": ["Concerto", "type"]
+    }
+  },
+  {
+    "id": "schema-q5-model-element",
+    "category": "schema-knowledge",
+    "prompt": "Are Agreement and Template the same kind of model element in this protocol? Explain what model element each is.",
+    "expected": {
+      "toolCalls": [],
+      "keywords": ["concept"]
+    }
+  },
+  {
+    "id": "tool-q1-get-agreement",
+    "category": "tool-use",
+    "prompt": "Fetch the agreement with ID 1.",
+    "expected": {
+      "toolCalls": ["getAgreement"],
+      "keywords": []
+    }
+  },
+  {
+    "id": "tool-q2-get-template",
+    "category": "tool-use",
+    "prompt": "Get template number 1.",
+    "expected": {
+      "toolCalls": ["getTemplate"],
+      "keywords": []
+    }
+  },
+  {
+    "id": "tool-q3-convert-html",
+    "category": "tool-use",
+    "prompt": "Convert agreement 1 to HTML format.",
+    "expected": {
+      "toolCalls": ["convert-agreement-to-format"],
+      "keywords": []
+    }
+  },
+  {
+    "id": "mixed-q1-fetch-and-classify",
+    "category": "mixed",
+    "prompt": "Fetch agreement 1 and tell me what `$class` it carries.",
+    "expected": {
+      "toolCalls": ["getAgreement"],
+      "keywords": ["org.accordproject.protocol"]
+    }
+  },
+  {
+    "id": "mixed-q2-fetch-and-explain",
+    "category": "mixed",
+    "prompt": "Get template 1, then explain what kind of object it is in the Concerto model.",
+    "expected": {
+      "toolCalls": ["getTemplate"],
+      "keywords": ["concept", "Template"]
+    }
+  }
+]
