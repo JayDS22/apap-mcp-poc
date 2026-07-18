@@ -94,6 +94,20 @@ export class InvalidPayloadError extends ServiceError {
   }
 }
 
+// -- Subscription errors --
+
+export class SubscriptionInvalidUriError extends ServiceError {
+  constructor(uri: string) {
+    super(
+      'SUBSCRIPTION_INVALID_URI',
+      400,
+      `Subscription URI is not subscribable: ${uri}`,
+      { uri },
+    );
+    this.name = 'SubscriptionInvalidUriError';
+  }
+}
+
 // -- Generic validation error --
 
 export class ValidationError extends ServiceError {
