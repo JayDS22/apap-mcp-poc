@@ -7,6 +7,7 @@ import {
   AgreementConversionError,
   InvalidPayloadError,
 } from './errors.js';
+import { subscriptionRegistry } from './subscriptionRegistry.js';
 
 /** Replaces: makeApiRequest(`${API_BASE_URL}/agreements`) */
 export async function listAgreements(db: Database): Promise<AgreementRow[]> {
@@ -20,14 +21,17 @@ export async function getAgreementById(db: Database, id: number): Promise<Agreem
   return rows[0];
 }
 
+/** Notifies: apap://agreements/{id} */
 export async function createAgreement(
   db: Database,
   data: AgreementInsert,
 ): Promise<AgreementRow> {
   const rows = await db.insert(Agreement).values(data).returning();
+  subscriptionRegistry.notify(`apap://agreements/${rows[0].id}`);
   return rows[0];
 }
 
+/** Notifies: apap://agreements/{id} */
 export async function updateAgreement(
   db: Database,
   id: number,
@@ -35,12 +39,15 @@ export async function updateAgreement(
 ): Promise<AgreementRow> {
   const rows = await db.update(Agreement).set(data).where(eq(Agreement.id, id)).returning();
   if (rows.length === 0) throw new AgreementNotFoundError(id);
+  subscriptionRegistry.notify(`apap://agreements/${id}`);
   return rows[0];
 }
 
+/** Notifies: apap://agreements/{id} */
 export async function deleteAgreement(db: Database, id: number): Promise<void> {
   const rows = await db.delete(Agreement).where(eq(Agreement.id, id)).returning();
   if (rows.length === 0) throw new AgreementNotFoundError(id);
+  subscriptionRegistry.notify(`apap://agreements/${id}`);
 }
 
 // ----- Convert + Trigger -----

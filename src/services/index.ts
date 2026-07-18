@@ -4,3 +4,4 @@
 export * from './templateService.js';
 export * from './agreementService.js';
 export * from './errors.js';
+export * from './subscriptionRegistry.js';

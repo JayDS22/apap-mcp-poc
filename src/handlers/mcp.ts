@@ -15,6 +15,9 @@ import {
   convertAgreement,
   triggerAgreement,
   ServiceError,
+  subscriptionRegistry,
+  isValidResourceUri,
+  SubscriptionInvalidUriError,
 } from '../services/index.js';
 import { createLogger } from '../middleware/logging.js';
 
@@ -32,11 +35,68 @@ const sseTransports: Record<string, SSEServerTransport> = {};
  * layer directly instead of looping back through makeApiRequest -> fetch ->
  * Express -> handler -> DB. The internal HTTP round-trip is gone.
  */
-function createMcpServer(db: Database): McpServer {
+function createMcpServer(db: Database, getSessionId: () => string): McpServer {
   const server = new McpServer(
     { name: 'apap-mcp-server', version: '1.0.0' },
-    { capabilities: { logging: {} } },
+    { capabilities: { logging: {}, resources: { subscribe: true } } },
   );
+
+  // -- subscriptions/listen (SEP-2575 preview) --
+  //
+  // The 2026-07-28 RC formalises `subscriptions/listen` as a single
+  // long-lived POST-response stream with opt-in types tagged by
+  // io.modelcontextprotocol/subscriptionId. Today's SDK does not natively
+  // route that method, so we register it as a custom request handler via
+  // the underlying Server and dispatch via `sendResourceUpdated`, which
+  // matches the wire shape the SDK already produces.
+  //
+  // When the RC lands and the SDK exposes native subscription plumbing,
+  // this handler can be replaced with the SDK primitive; the registry and
+  // service-side notify() calls do not change.
+  const SubscribeRequestSchema = z.object({
+    method: z.literal('subscriptions/listen'),
+    params: z.object({
+      uris: z.array(z.string()).min(1),
+    }),
+  });
+
+  server.server.setRequestHandler(SubscribeRequestSchema, async (request) => {
+    const sessionId = getSessionId();
+    const subscriptionId = crypto.randomUUID();
+
+    for (const uri of request.params.uris) {
+      if (!isValidResourceUri(uri)) {
+        throw new SubscriptionInvalidUriError(uri);
+      }
+    }
+
+    for (const uri of request.params.uris) {
+      subscriptionRegistry.subscribe(
+        sessionId,
+        uri,
+        (payload) => {
+          // Fire-and-forget: broken transports must not cascade back to the
+          // DB write path that invoked notify(). sendResourceUpdated returns
+          // a Promise; unhandled rejection would surface at the notify() call
+          // site otherwise.
+          server.server.sendResourceUpdated({ uri: payload.params.uri }).catch((err) => {
+            logger.warn(
+              { err, sessionId, uri: payload.params.uri },
+              'sendResourceUpdated failed',
+            );
+          });
+        },
+        subscriptionId,
+      );
+    }
+
+    logger.info(
+      { sessionId, subscriptionId, uris: request.params.uris },
+      'subscriptions/listen registered',
+    );
+
+    return { subscriptionId };
+  });
 
   // -- Resources --
 
@@ -262,10 +322,14 @@ export function mountMcpRoutes(router: express.Router, db: Database): void {
           if (sid && transports[sid]) {
             logger.info({ sessionId: sid }, 'StreamableHTTP session closed');
             delete transports[sid];
+            subscriptionRegistry.clearSession(sid);
           }
         };
 
-        const server = createMcpServer(db);
+        // sessionId isn't known until onsessioninitialized fires. Pass a
+        // getter that reads transport.sessionId at request time (which is
+        // always after init for any real client request).
+        const server = createMcpServer(db, () => transport.sessionId ?? 'uninitialized');
         await server.connect(transport);
       } else {
         res.status(400).json({
@@ -329,9 +393,10 @@ export function mountMcpRoutes(router: express.Router, db: Database): void {
       transport.onclose = () => {
         logger.info({ sessionId }, 'SSE session closed');
         delete sseTransports[sessionId];
+        subscriptionRegistry.clearSession(sessionId);
       };
 
-      const server = createMcpServer(db);
+      const server = createMcpServer(db, () => sessionId);
       await server.connect(transport);
     } catch (err) {
       logger.error({ err }, 'Error setting up SSE transport');
