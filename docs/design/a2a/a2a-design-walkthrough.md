@@ -16,7 +16,6 @@ A2A on `POST /a2a` next to MCP on `POST /mcp`. Same Express app, different route
 
 ![Sidecar architecture](diagrams/a2a-sidecar.png)
 
-**Tradeoff**: Shared auth utility across two call sites can drift if a future route skips the middleware; mitigated by a test asserting both call sites use the same `AuthAdapter`.
 
 ---
 
@@ -26,7 +25,6 @@ A2A skills registered as MCP tools. No `POST /a2a`, no A2A discovery URL. MCP cl
 
 ![True adapter Reading 1](diagrams/a2a-adapter-r1.png)
 
-**Tradeoff**: Not A2A wire-spec compliant. Any standalone A2A client is locked out. The server is A2A-capable only via MCP clients.
 
 ---
 
@@ -43,7 +41,6 @@ Both protocols share the same JSON-RPC envelope (`{jsonrpc, method, params, id}`
 | **MCP** | `initialize`, `tools/list`, `tools/call`, `resources/read` |
 | **A2A** | `message/send`, `tasks/get`, `tasks/cancel` |
 
-**Tradeoff**: The dispatch middleware is ~6 lines of custom glue that neither SDK ships. No reference implementation of this pattern exists in the wild for A2A + MCP together. A bug in the dispatcher would take down both protocols.
 
 ---
 
