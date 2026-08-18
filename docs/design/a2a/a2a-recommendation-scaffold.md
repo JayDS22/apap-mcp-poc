@@ -22,17 +22,17 @@ A2A on `POST /a2a` next to MCP on `POST /mcp`. Same Express app, different route
 **Flow in plain English**: An A2A client hits `POST /a2a`; the request goes through `jsonRpcHandler` → `UserBuilder` (which calls the shared `AuthAdapter`) → `DefaultRequestHandler` → `ApapAgentExecutor` → services. An MCP client hits `POST /mcp`; the request goes through the auth middleware (same `AuthAdapter`) → transport → registered tools → same services. Two separate endpoints, one shared auth utility, one shared services layer. Discovery card served separately at `/.well-known/agent-card.json` via `agentCardHandler`.
 
 **Pros**
-- A2A wire-spec compliant: standalone A2A clients can connect
-- `/.well-known/agent-card.json` discovery works as A2A clients expect
-- Purely additive: zero change to `handlers/mcp.ts` or existing MCP behavior
-- Independent test surface: A2A tests do not load MCP setup
-- Blast radius: an A2A bug does not touch MCP
-- Uses `@a2a-js/sdk` as designed (SDK maintenance flows in cleanly)
-- Peer-route pattern generalizes for future protocols (gRPC, other agent frameworks)
+- Works with any standard A2A client out of the box, because the endpoint follows the A2A spec.
+- Ships with a discovery document at the well-known URL, so A2A clients can find the server automatically.
+- Purely additive to the existing codebase: nothing about the current MCP transport changes, so nothing that already works is at risk.
+- Has its own test surface: A2A tests do not need any MCP setup to run.
+- Isolates failures: a bug in the A2A code path does not touch MCP, and vice versa.
+- Uses the A2A SDK the way its documentation describes, which means future SDK updates flow in without custom rework.
+- Sets a pattern for later protocols: adding a third protocol (gRPC or another agent framework) means adding a new peer route, not rewriting existing ones.
 
 **Cons**
-- Two auth call sites (`UserBuilder` for A2A, middleware for MCP) sharing one utility; can drift if a future route skips the middleware
-- Slightly more setup: two routes to mount vs one
+- Auth logic lives in two places (once for A2A, once for MCP). Both call the same shared utility, but a future contributor could add a new route and forget to wire it in.
+- Slightly more setup at boot: two routes to register instead of one.
 
 <details><summary>Mermaid source (renders on GitHub / Obsidian / VS Code preview)</summary>
 
@@ -81,17 +81,17 @@ A2A skills registered as MCP tools. No `POST /a2a`, no A2A discovery URL. MCP cl
 **Flow in plain English**: Only `POST /mcp` exists. An MCP client hits `POST /mcp`; the request goes through the auth middleware → transport → `server.registerTool` dispatch. Existing MCP tools live there alongside newly-registered `a2a.*` tools; both call the same services. A standalone A2A client (one that speaks the A2A JSON-RPC wire) has no endpoint to connect to and cannot use this server at all.
 
 **Pros**
-- Single auth call site (only `/mcp`); no duplication across two routes
-- MCP clients (e.g. Claude Desktop) get A2A capabilities natively via `tools/call`
-- Single dispatch code path; fewer moving parts than sidecar
+- Auth logic lives in exactly one place, so no chance of two routes drifting out of sync.
+- Existing MCP clients (like Claude Desktop) can invoke A2A capabilities natively via `tools/call`, with no client-side changes needed.
+- Fewer moving parts than sidecar: one endpoint, one dispatch path, one place to reason about the request flow.
 
 **Cons**
-- **Not A2A wire-spec compliant**: no `POST /a2a` endpoint; standalone A2A clients cannot connect
-- No `/.well-known/agent-card.json` discovery for A2A clients
-- Bypasses `@a2a-js/sdk` entirely; loses SDK maintenance and future upstream fixes
-- Bloats `handlers/mcp.ts` with `a2a.*` tool blocks; couples A2A + MCP test surfaces
-- Awkward path for future protocol additions (each new protocol adds more tool blocks)
-- Named "A2A wrapper" while shipping no A2A endpoint may confuse integrators
+- **Does not follow the A2A wire spec.** There is no `POST /a2a` endpoint, so a standalone A2A client cannot connect to this server at all.
+- No A2A discovery document either. Clients that rely on the well-known URL to find the server have no way in.
+- Bypasses the A2A SDK completely. Any future SDK improvement (bug fixes, new features, security patches) has to be reimplemented here by hand.
+- Adds new `a2a.*` tool blocks into `handlers/mcp.ts` and couples A2A tests to MCP test setup.
+- Awkward if a third protocol needs to be supported later: each new protocol means more tool blocks stuffed into the same file.
+- The workstream is named "A2A wrapper" but ships no A2A endpoint; integrators looking for one will not find it.
 
 <details><summary>Mermaid source</summary>
 
@@ -131,20 +131,20 @@ Custom method-dispatch middleware inspects `body.method` and routes A2A methods 
 **Flow in plain English**: All traffic hits one endpoint (`POST /mcp`), but two different kinds of clients send two different kinds of requests to it. The auth middleware runs first. Then a custom piece of code (the "method-dispatch middleware") reads the `method` field inside the JSON body and decides where to send the request: if the method name belongs to A2A's vocabulary, route to the A2A SDK; if it belongs to MCP's vocabulary, route to the MCP transport. Both paths end up calling the same services layer.
 
 **Pros**
-- Single auth call site (only `/mcp`); no duplication
-- Technically A2A wire-spec compliant if the discovery card advertises `/mcp`
-- Uses both `@a2a-js/sdk` and MCP SDK directly (no bypass)
-- MCP + A2A clients hit the same endpoint (single URL to publish)
+- Auth logic lives in exactly one place, so no duplication across routes.
+- Technically compliant with the A2A wire spec, as long as the discovery document points A2A clients to `/mcp`.
+- Uses both the A2A SDK and the MCP SDK the way their documentation describes (no bypass).
+- Only one URL to publish and operate: A2A and MCP clients share the same endpoint.
 
 **Cons**
-- Custom method-dispatch middleware = ~6 lines of glue that neither SDK ships
-- **No reference implementation of this pattern exists in the wild** for A2A + MCP together
-- A dispatcher bug takes down BOTH protocols (worst blast radius of the three options)
-- Discovery card would advertise `/mcp`, which is an unexpected shape for A2A clients (they expect a dedicated A2A URL)
-- Rewrites the existing `/mcp` dispatch path; touches working MCP behavior
-- Test surface couples A2A + MCP paths through one dispatcher
-- Every new protocol added means adding more method-name mappings to the dispatcher
-- Session-mux semantics of `NodeStreamableHTTPServerTransport` may interact awkwardly with A2A task lifecycle
+- Requires a small piece of custom code (a "method-dispatch middleware") that neither SDK provides. It has to be written from scratch and maintained locally.
+- **No one else has built this pattern.** There is no reference implementation of A2A + MCP multiplexed on one endpoint anywhere in the open-source world; this design is being invented here.
+- **Worst blast radius of any option**: a bug in the dispatcher takes down both A2A and MCP at the same time.
+- The discovery document would tell A2A clients to connect to `/mcp`. Most A2A clients expect a URL that speaks only A2A, so a multiplexed endpoint may be an unexpected shape.
+- Rewrites the existing `/mcp` dispatch code, which means touching MCP behavior that already works. Any regression here affects features that already ship.
+- A2A and MCP tests become coupled through the shared dispatcher; failures in one can mask or trigger failures in the other.
+- Adding a third protocol later means adding more method-name mappings into the same dispatcher. The pattern does not scale gracefully as more protocols are added.
+- The MCP SDK's transport handles per-session state on `/mcp`, and this may interact awkwardly with how A2A tracks task lifecycles across requests.
 
 **What "multiplex" means**: running two independent things over one shared channel. Here, one HTTP endpoint carries traffic for two protocols (A2A + MCP) at the same time. Analogy: an apartment building with one street address but many units (one door, many destinations). The "method-dispatch middleware" is the mailroom that looks at the label on each envelope and sends it to the right unit.
 
