@@ -16,7 +16,6 @@ A2A on `POST /a2a` next to MCP on `POST /mcp`. Same Express app, different route
 
 ![Sidecar architecture](diagrams/a2a-sidecar.png)
 
-
 ---
 
 ## Option B: True adapter (Reading 1, "expose as MCP tools")
@@ -24,7 +23,6 @@ A2A on `POST /a2a` next to MCP on `POST /mcp`. Same Express app, different route
 A2A skills registered as MCP tools. No `POST /a2a`, no A2A discovery URL. MCP clients get A2A capabilities via `tools/call`. Standalone A2A clients cannot connect.
 
 ![True adapter Reading 1](diagrams/a2a-adapter-r1.png)
-
 
 ---
 
@@ -40,7 +38,6 @@ Both protocols share the same JSON-RPC envelope (`{jsonrpc, method, params, id}`
 |---|---|
 | **MCP** | `initialize`, `tools/list`, `tools/call`, `resources/read` |
 | **A2A** | `message/send`, `tasks/get`, `tasks/cancel` |
-
 
 ---
 
