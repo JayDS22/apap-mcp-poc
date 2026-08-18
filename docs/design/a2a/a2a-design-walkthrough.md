@@ -1,6 +1,6 @@
 # A2A wrapper for accordproject/apap: architecture options
 
-Choosing between sidecar and true adapter, with three architecture options on the table. Design walkthrough for the 2026-08-18 review with Niall Roche, Dan Selman, Steven Nicholson.
+Choosing between sidecar and true adapter, with three architecture options on the table. Design walkthrough for the 2026-08-18 A2A architecture review.
 
 ---
 
@@ -65,17 +65,15 @@ Both protocols share the same JSON-RPC envelope (`{jsonrpc, method, params, id}`
 
 ## Proposed design: Sidecar
 
-*Placeholder — replace with your one-sentence recommendation in your voice before the call. Draft below as a starting point.*
-
-Sidecar is the recommended architecture. The two decisive wins on A2A wire-spec compliance and discovery card are non-negotiable for a workstream called "A2A wrapper" — any option that fails to expose a standard A2A endpoint or omits the well-known discovery URL leaves standalone A2A clients unable to connect. True adapter's marginal wins on auth-chain simplicity (one call site vs two) do not outweigh non-conformance to the A2A spec, and Reading 2 introduces custom dispatch glue with zero reference implementations in the wild.
+Sidecar is the recommended architecture. The two decisive wins on A2A wire-spec compliance and discovery card are non-negotiable for a workstream called "A2A wrapper"; any option that fails to expose a standard A2A endpoint or omits the well-known discovery URL leaves standalone A2A clients unable to connect. True adapter's marginal wins on auth-chain simplicity (one call site vs two) do not outweigh non-conformance to the A2A spec, and Reading 2 introduces custom dispatch glue with zero reference implementations in the wild.
 
 **Accepted tradeoff**: shared `AuthAdapter` utility across two call sites can drift if a future contributor adds a route without wiring the middleware. Mitigated by a test asserting both call sites route through the same `AuthAdapter` instance.
 
 ---
 
-## Open questions for the call
+## Blocking confirmations before implementation
 
-1. **Definition check**: which reading of "true adapter" did the 2026-08-06 discussion mean — Reading 1 (as MCP tools), Reading 2 (multiplex on `/mcp`), or something else? The recommendation above assumes both are ruled out on wire-spec grounds; confirm the framing was intended.
+1. **Definition check**: which reading of "true adapter" did the 2026-08-06 discussion mean: Reading 1 (as MCP tools), Reading 2 (multiplex on `/mcp`), or something else? The recommendation above assumes both are ruled out on wire-spec grounds; confirm the framing was intended.
 
 2. **MCP-client-invokes-A2A**: is it a workstream goal for MCP clients (e.g. Claude Desktop) to invoke A2A capabilities through the same server? If yes, Reading 1 becomes materially stronger and the recommendation shifts.
 
