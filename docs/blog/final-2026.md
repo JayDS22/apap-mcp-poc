@@ -8,10 +8,11 @@ mentors: Niall Roche, Dan Selman
 window: June 2 to August 25, 2026 (12 weeks)
 ---
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 0.5em 0 1em 0;">
-  <img src="diagrams/icons/brands/GSoC.png" alt="GSoC 2026" width="90">
-  <img src="diagrams/icons/brands/AccordProject.png" alt="Accord Project" width="220">
-</div>
+<p>
+  <img src="diagrams/icons/brands/GSoC.png" alt="GSoC 2026" width="90" align="left">
+  <img src="diagrams/icons/brands/AccordProject.png" alt="Accord Project" width="220" align="right">
+</p>
+<br clear="all"><br clear="all">
 
 # Rewiring APAP for Agents: MCP, A2A, and a Shared Service Layer
 
