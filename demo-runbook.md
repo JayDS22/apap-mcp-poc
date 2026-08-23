@@ -1,17 +1,16 @@
-# Mid-eval demo runbook
+# Typed-context demo runbook
 
-Accord tech WG call, Jul 14 2026. 10-minute slot. Idea #4, Hardening the APAP/MCP Server.
+Idea #4, Hardening the APAP/MCP Server. Originally scripted for the Accord tech WG mid-eval call on Jul 14 2026 (10-minute slot). The commands still work end to end against POC main; the narration below reflects the mid-eval framing (PRs referenced were in-flight at the time; PRs `#184`, `#199`, `#200` have since merged upstream). For the August 2026 final demo, use this as a probe script and update the framing to past tense as needed.
 
 Each section: the command on top, one or two lines to say underneath. Copy the command, say the line, move on.
 
 ---
 
-## Before the call (5 min prep)
+## Before recording / dialing in (5 min prep)
 
-**1. Bring up the POC clean.**
+**1. Bring up the POC clean.** Run from the repo root:
 
 ```bash
-cd /Users/DELL/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 docker compose down
 docker compose up -d --build
 ```
@@ -24,30 +23,27 @@ Wait for `Container apap-mcp-poc-server-1 Started`. Takes about 30 seconds.
 curl -s http://localhost:9000/healthz
 ```
 
-Expect `{"status":"ok","timestamp":"..."}`. If not, do not join the call yet.
+Expect `{"status":"ok","timestamp":"..."}`. If not, do not roll tape / do not join the call yet.
 
-**3. Dry-run the demo script.**
+**3. Dry-run the demo script.** Run from the repo root:
 
 ```bash
-/Users/DELL/Documents/Github_Personal/GSoC-Accord/demo-runner.sh
+./demo-runner.sh
 ```
 
-Bottom line must read `4/4 probes green - demo ready`. If any probe is red, fix before dialling in.
+Bottom line must read `4/4 probes green - demo ready`. If any probe is red, fix before recording.
 
-**4. Optional: server logs pane.**
-
-Second terminal, keep it visible next to the demo pane during the call.
+**4. Optional: server logs pane.** Second terminal, keep it visible next to the demo pane:
 
 ```bash
-cd /Users/DELL/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 docker compose logs -f apap-mcp-poc-server-1
 ```
 
-Mentors see the JSON-RPC traffic hit the server in real time as the script runs. Nice touch, not required.
+Viewers see the JSON-RPC traffic hit the server in real time as the script runs. Nice touch, not required.
 
 ---
 
-## On the call
+## During recording / on the call
 
 ### Frame the demo (30 seconds, no command yet)
 
@@ -57,12 +53,12 @@ Say the plain-English part first, then the technical bridge. The plain part is f
 
 Then bridge into the technical framing:
 
-> "One script, four probes against the MCP surface. Same shape I'm bringing upstream through PRs 184, 199, and 200."
+> "One script, four probes against the MCP surface. Same shape I brought upstream through PRs 184, 199, and 200."
 
 ### Run the script
 
 ```bash
-/Users/DELL/Documents/Github_Personal/GSoC-Accord/demo-runner.sh
+./demo-runner.sh
 ```
 
 Then narrate as each probe fires. The runner paces itself, so you have time.
@@ -125,9 +121,9 @@ Then the technical bit:
 
 Any probe fails, do not scramble. Say this and move on:
 
-> "The runner's flagging that one. Let me screenshare the dry-run capture from my prep notes and we can debug after the call."
+> "The runner's flagging that one. Let me screenshare the dry-run capture from my prep notes and we can debug after."
 
-Open `/Users/DELL/Documents/Github_Personal/GSoC-Accord/mid-eval-demo-notes.md` and screenshare the "Captured wire outputs" section. Dry-run outputs are pasted there verbatim.
+Have a screenshot of a successful `./demo-runner.sh` run open in a second window as backup, so you can drop it into the recording / screenshare without leaving the demo screen.
 
 ---
 
@@ -142,20 +138,21 @@ These render fine, point them at whichever they ask about:
 
 Do not point them at `http://localhost:9000/` itself. There's no HTML index; it returns "Cannot GET /" and that reads like a broken server.
 
-For the MCP surface specifically, if someone wants to click through it visually rather than watch the script, MCP Inspector is running at:
+For the MCP surface specifically, if someone wants to click through it visually rather than watch the script, launch MCP Inspector in a third terminal:
 
-```
-http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=<token from your terminal>
+```bash
+npx @modelcontextprotocol/inspector --transport streamable-http --url http://localhost:9000/mcp
 ```
 
-Set the target URL inside the Inspector to `http://localhost:9000/mcp` (Streamable HTTP).
+The inspector opens at `http://localhost:6274/` and prints an auth token on stdout to paste into the URL. Not started by `docker compose up`; only run it if a viewer explicitly asks for a visual walkthrough.
 
 ---
 
-## After the call
+## After recording / call
+
+From the repo root:
 
 ```bash
-cd /Users/DELL/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 docker compose down
 ```
 

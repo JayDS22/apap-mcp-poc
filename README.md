@@ -22,7 +22,7 @@ This POC was the seed for the GSoC 2026 cycle contributing to `accordproject/apa
 - **PG18 support + RLS smoke:** [`#229`](https://github.com/accordproject/apap/pull/229), [`#245`](https://github.com/accordproject/apap/pull/245)
 - **Paged MCP resource URIs (RFC 6570):** [`#243`](https://github.com/accordproject/apap/pull/243)
 
-POC main now carries the typed-context resource (`apap://schema/protocol.cto` + `InitializeResult.instructions`) and the A2A sidecar design docs under `docs/design/a2a/`. The `demo-runbook.md` at the repo root walks a full typed-context flow end-to-end.
+POC main now carries the typed-context resource (`apap://schema/protocol.cto` + `InitializeResult.instructions`) and the A2A sidecar design docs under `docs/design/a2a/`. The `demo-runbook.md` at the repo root is the shooting script for the video (originally recorded for the July mid-eval WG call; commands work end to end, narration reflects mid-eval framing).
 
 ---
 
