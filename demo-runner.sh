@@ -315,7 +315,8 @@ say_bold "[PROBE 5] shared service layer  (REST + MCP resource on one source)"
 
 # REST GET /templates - a normal HTTP client's view.
 REST_TEMPLATES_RAW="$(curl -sS "${BASE_URL}/templates" 2>/dev/null)"
-REST_COUNT="$(printf '%s' "$REST_TEMPLATES_RAW" | jq 'length // 0' 2>/dev/null || echo 0)"
+# REST returns { count, items: [...] } envelope, so count the items array.
+REST_COUNT="$(printf '%s' "$REST_TEMPLATES_RAW" | jq '.items | length // 0' 2>/dev/null || echo 0)"
 
 # MCP resources/read apap://templates - the MCP client's view of the same data.
 MCP_READ_PAYLOAD='{"jsonrpc":"2.0","id":5,"method":"resources/read","params":{"uri":"apap://templates"}}'
@@ -330,9 +331,9 @@ MCP_TEMPLATES_RAW="$(
 )"
 MCP_TEMPLATES_JSON="$(printf '%s' "$MCP_TEMPLATES_RAW" | sse_to_json)"
 
-# MCP resource returns contents[0].text as a JSON string of the same rows.
-MCP_TEXT="$(printf '%s' "$MCP_TEMPLATES_JSON" | jq -r '.result.contents[0].text // empty' 2>/dev/null)"
-MCP_COUNT="$(printf '%s' "$MCP_TEXT" | jq 'length // 0' 2>/dev/null || echo 0)"
+# MCP returns contents[] as one entry per template (each with its own uri +
+# JSON body), so the row count is the length of the contents array itself.
+MCP_COUNT="$(printf '%s' "$MCP_TEMPLATES_JSON" | jq '.result.contents | length // 0' 2>/dev/null || echo 0)"
 
 printf "${GREEN}REST GET /templates:${RESET}                    %s records\n" "$REST_COUNT"
 printf "${GREEN}MCP resources/read apap://templates:${RESET}    %s records\n" "$MCP_COUNT"
@@ -352,7 +353,10 @@ sleep "$PACE"
 # ---------------------------------------------------------------------------
 say_bold "[PROBE 6] subscriptions/listen  (SEP-2575 preview handler)"
 
-SUB_PAYLOAD='{"jsonrpc":"2.0","id":6,"method":"subscriptions/listen","params":{"uris":["apap://templates"]}}'
+# isValidResourceUri only accepts item URIs (apap://templates/{id} or
+# apap://agreements/{id}), not collection URIs. Subscribe to a specific
+# template row that PROBE 2 already showed exists.
+SUB_PAYLOAD='{"jsonrpc":"2.0","id":6,"method":"subscriptions/listen","params":{"uris":["apap://templates/1"]}}'
 
 SUB_RAW="$(
   curl -sS \
@@ -376,7 +380,7 @@ if [ -z "$SUB_ID" ] || [ "$SUB_ID" = "null" ]; then
 else
   say_green "subscription registered:"
   printf "${GREEN}  subscriptionId:${RESET} %s\n" "$SUB_ID"
-  printf "${GREEN}  uris:${RESET}           apap://templates\n"
+  printf "${GREEN}  uris:${RESET}           apap://templates/1\n"
   PROBE6_OK=1
 fi
 separator
