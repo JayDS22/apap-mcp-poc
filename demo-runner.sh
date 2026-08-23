@@ -1,28 +1,33 @@
 #!/usr/bin/env bash
 # ============================================================================
-# demo-runner.sh - APAP MCP Demo Runner (mid-eval 2026-07)
+# demo-runner.sh - APAP MCP Demo Runner (GSoC 2026 final)
 # ============================================================================
 #
-# Drives four MCP probes against a POC MCP server at http://localhost:9000 to
-# demonstrate the slice-3 wiring for a live 10-minute GSoC mid-eval demo:
+# Drives seven probes against a POC MCP server at http://localhost:9000 to
+# demonstrate the twelve-week GSoC 2026 work on Idea #4 (Hardening the
+# APAP/MCP Server):
 #
-#   PROBE 1 - typed-context hint      (initialize -> result.instructions)
-#   PROBE 2 - resources               (resources/list includes protocol.cto)
-#   PROBE 3 - Concerto schema         (resources/read of apap://schema/...)
-#   PROBE 4 - typed error             (tools/call returns structured JSON)
+#   PROBE 1 - typed-context hint       (initialize -> result.instructions)
+#   PROBE 2 - resources                (resources/list includes protocol.cto)
+#   PROBE 3 - Concerto schema          (resources/read of apap://schema/...)
+#   PROBE 4 - typed error              (tools/call returns structured JSON)
+#   PROBE 5 - shared service layer     (REST + MCP see the same rows)
+#   PROBE 6 - subscriptions/listen     (SEP-2575 preview handler)
+#   PROBE 7 - service layer purity     (no Express/SDK imports under services/)
 #
 # Requirements:
 #   - bash 4+ (works on macOS bash 3.2 too, no associative arrays used)
 #   - curl
 #   - jq
+#   - grep
 #   - a terminal that renders ANSI color escapes
 #
 # Usage:
 #   ./demo-runner.sh
 #
-# A fully green run prints "4/4 probes green - demo ready" at the bottom and
+# A fully green run prints "7/7 probes green - demo ready" at the bottom and
 # exits 0. Any red PROBE line indicates a regression that must be fixed before
-# the mid-eval demo.
+# recording.
 # ============================================================================
 
 set -u
@@ -47,6 +52,9 @@ PROBE1_OK=0
 PROBE2_OK=0
 PROBE3_OK=0
 PROBE4_OK=0
+PROBE5_OK=0
+PROBE6_OK=0
+PROBE7_OK=0
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -63,7 +71,7 @@ separator() {
 banner() {
   printf "\n"
   printf "${BOLD}======================================================================${RESET}\n"
-  printf "${BOLD} APAP MCP Demo Runner - mid-eval 2026-07${RESET}\n"
+  printf "${BOLD} APAP MCP Demo Runner - GSoC 2026 final${RESET}\n"
   printf "${BOLD} target: %s${RESET}\n" "$BASE_URL"
   printf "${BOLD}======================================================================${RESET}\n"
   printf "\n"
@@ -298,16 +306,117 @@ else
 fi
 separator
 
+sleep "$PACE"
+
+# ---------------------------------------------------------------------------
+# PROBE 5 - shared service layer (REST + MCP see the same rows)
+# ---------------------------------------------------------------------------
+say_bold "[PROBE 5] shared service layer  (REST + MCP resource on one source)"
+
+# REST GET /templates - a normal HTTP client's view.
+REST_TEMPLATES_RAW="$(curl -sS "${BASE_URL}/templates" 2>/dev/null)"
+REST_COUNT="$(printf '%s' "$REST_TEMPLATES_RAW" | jq 'length // 0' 2>/dev/null || echo 0)"
+
+# MCP resources/read apap://templates - the MCP client's view of the same data.
+MCP_READ_PAYLOAD='{"jsonrpc":"2.0","id":5,"method":"resources/read","params":{"uri":"apap://templates"}}'
+MCP_TEMPLATES_RAW="$(
+  curl -sS \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "mcp-session-id: ${SESSION_ID}" \
+    -X POST \
+    --data "$MCP_READ_PAYLOAD" \
+    "$MCP_URL"
+)"
+MCP_TEMPLATES_JSON="$(printf '%s' "$MCP_TEMPLATES_RAW" | sse_to_json)"
+
+# MCP resource returns contents[0].text as a JSON string of the same rows.
+MCP_TEXT="$(printf '%s' "$MCP_TEMPLATES_JSON" | jq -r '.result.contents[0].text // empty' 2>/dev/null)"
+MCP_COUNT="$(printf '%s' "$MCP_TEXT" | jq 'length // 0' 2>/dev/null || echo 0)"
+
+printf "${GREEN}REST GET /templates:${RESET}                    %s records\n" "$REST_COUNT"
+printf "${GREEN}MCP resources/read apap://templates:${RESET}    %s records\n" "$MCP_COUNT"
+
+if [ "$REST_COUNT" = "$MCP_COUNT" ]; then
+  say_green "REST and MCP see the same row count - one source of truth, no localhost round-trip"
+  PROBE5_OK=1
+else
+  say_red "PROBE 5 FAILED - REST/MCP row counts differ (REST=${REST_COUNT}, MCP=${MCP_COUNT})"
+fi
+separator
+
+sleep "$PACE"
+
+# ---------------------------------------------------------------------------
+# PROBE 6 - subscriptions/listen (SEP-2575 preview)
+# ---------------------------------------------------------------------------
+say_bold "[PROBE 6] subscriptions/listen  (SEP-2575 preview handler)"
+
+SUB_PAYLOAD='{"jsonrpc":"2.0","id":6,"method":"subscriptions/listen","params":{"uris":["apap://templates"]}}'
+
+SUB_RAW="$(
+  curl -sS \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "mcp-session-id: ${SESSION_ID}" \
+    -X POST \
+    --data "$SUB_PAYLOAD" \
+    "$MCP_URL"
+)"
+
+SUB_JSON="$(printf '%s' "$SUB_RAW" | sse_to_json)"
+SUB_ID="$(printf '%s' "$SUB_JSON" | jq -r '.result.subscriptionId // empty' 2>/dev/null)"
+
+if [ -z "$SUB_ID" ] || [ "$SUB_ID" = "null" ]; then
+  say_red "PROBE 6 FAILED - subscriptions/listen did not return a subscriptionId"
+  ERR_MSG="$(printf '%s' "$SUB_JSON" | jq -r '.error.message // empty' 2>/dev/null)"
+  if [ -n "$ERR_MSG" ]; then
+    say_dim "error: ${ERR_MSG}"
+  fi
+else
+  say_green "subscription registered:"
+  printf "${GREEN}  subscriptionId:${RESET} %s\n" "$SUB_ID"
+  printf "${GREEN}  uris:${RESET}           apap://templates\n"
+  PROBE6_OK=1
+fi
+separator
+
+sleep "$PACE"
+
+# ---------------------------------------------------------------------------
+# PROBE 7 - service layer purity (no transport imports)
+# ---------------------------------------------------------------------------
+say_bold "[PROBE 7] service layer purity  (no Express/SDK imports in src/services/)"
+
+SERVICE_FILES="$(ls src/services/*.ts 2>/dev/null | wc -l | tr -d ' ')"
+FORBIDDEN_HITS="$(
+  grep -rEc "from ['\"]express['\"]|from ['\"]@modelcontextprotocol" src/services/ 2>/dev/null \
+    | awk -F: '{s+=$2} END {print s+0}'
+)"
+
+printf "${GREEN}service files scanned:${RESET}         %s\n" "$SERVICE_FILES"
+printf "${GREEN}forbidden transport imports:${RESET}   %s\n" "$FORBIDDEN_HITS"
+
+if [ "$FORBIDDEN_HITS" = "0" ]; then
+  say_green "boundary holds - service layer is transport-agnostic"
+  PROBE7_OK=1
+else
+  say_red "PROBE 7 FAILED - service layer imports transport code (defeats the refactor)"
+  say_dim "leaking sites:"
+  grep -rnE "from ['\"]express['\"]|from ['\"]@modelcontextprotocol" src/services/ 2>/dev/null | sed 's/^/  /'
+fi
+separator
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-PASS=$(( PROBE1_OK + PROBE2_OK + PROBE3_OK + PROBE4_OK ))
+PASS=$(( PROBE1_OK + PROBE2_OK + PROBE3_OK + PROBE4_OK + PROBE5_OK + PROBE6_OK + PROBE7_OK ))
 
 printf "\n"
-if [ "$PASS" -eq 4 ]; then
-  say_green "4/4 probes green - demo ready"
+if [ "$PASS" -eq 7 ]; then
+  say_green "7/7 probes green - demo ready"
   exit 0
 else
-  say_red "${PASS}/4 probes green - see above"
+  say_red "${PASS}/7 probes green - see above"
   exit 1
 fi

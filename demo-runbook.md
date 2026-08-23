@@ -1,6 +1,6 @@
-# Typed-context demo runbook
+# GSoC 2026 final demo runbook
 
-Idea #4, Hardening the APAP/MCP Server. Originally scripted for the Accord tech WG mid-eval call on Jul 14 2026 (10-minute slot). The commands still work end to end against POC main; the narration below reflects the mid-eval framing (PRs referenced were in-flight at the time; PRs `#184`, `#199`, `#200` have since merged upstream). For the August 2026 final demo, use this as a probe script and update the framing to past tense as needed.
+Idea #4, Hardening the APAP/MCP Server. Seven-probe runner covering the twelve-week arc: typed-context hint, resource discovery, Concerto schema fetch, typed error, shared service layer (REST + MCP on one source), subscriptions/listen preview, and a service-layer purity check. Originally scripted for the July mid-eval and extended to seven probes for the August final; the narration is past-tense on the upstream PRs (`#211` through `#225` for the service-layer slices, `#184` and `#200` for typed errors, `#199` for typed context).
 
 Each section: the command on top, one or two lines to say underneath. Copy the command, say the line, move on.
 
@@ -31,7 +31,7 @@ Expect `{"status":"ok","timestamp":"..."}`. If not, do not roll tape / do not jo
 ./demo-runner.sh
 ```
 
-Bottom line must read `4/4 probes green - demo ready`. If any probe is red, fix before recording.
+Bottom line must read `7/7 probes green - demo ready`. If any probe is red, fix before recording.
 
 **4. Optional: server logs pane.** Second terminal, keep it visible next to the demo pane:
 
@@ -53,7 +53,7 @@ Say the plain-English part first, then the technical bridge. The plain part is f
 
 Then bridge into the technical framing:
 
-> "One script, four probes against the MCP surface. Same shape I brought upstream through PRs 184, 199, and 200."
+> "One script, seven probes covering the twelve-week arc: typed context, resource discovery, Concerto schema, typed errors, shared service layer, subscriptions, and a boundary check. Same shape I brought upstream through the slice sequence **#211** through **#225**."
 
 ### Run the script
 
@@ -105,15 +105,45 @@ Then the technical bit:
 
 > "Payload is `code: AGREEMENT_NOT_FOUND`, human message, and `details.identifier: 999999`. That is PR 200 wired end to end. On the RI today you still get a stringified concatenation the client cannot branch on."
 
-### When `4/4 probes green - demo ready` prints
+### While PROBE 5 prints (shared service layer)
 
 Plain first:
 
-> "So in aggregate: same server, same code, whether the caller is a normal HTTP client or an AI agent going through MCP. One consistent contract for both sides."
+> "Same server, same database, two different ways to ask. A normal HTTP client hits `/templates` over REST. An AI agent asks over MCP through a resource read. Both come back with the exact same rows because they call the same service function under the hood. That is the whole refactor in one screen."
 
 Then the technical bit:
 
-> "That is the shared service layer direction from the 143 RFC. Slice 3 in 200 is the incremental step that closes the mcp.ts side of it upstream."
+> "REST route and MCP resource both go through `listTemplates` in `src/services/templateService.ts`. No `makeApiRequest` loop, no localhost round-trip. Slices 1 through 5 upstream (**#211** through **#225**) landed the same pattern in the RI."
+
+### While PROBE 6 prints (subscriptions/listen)
+
+Plain first:
+
+> "The AI just asked the server 'let me know when things change.' The server said yes and handed back a subscription id. From this point on, if anyone modifies a template or an agreement, the AI hears about it in real time. It does not have to poll."
+
+Then the technical bit:
+
+> "SEP-2575 preview handler wired via `server.server.setRequestHandler`, registered against the URIs the client asked for. The 2026-07-28 MCP RC formalises the same shape natively. Tracking issue for the SDK 2.0 native version is **#232**."
+
+### While PROBE 7 prints (service layer purity)
+
+Plain first:
+
+> "Last one is a boundary check. The rule is that the service layer files, the ones that actually talk to the database, are not allowed to know anything about HTTP or MCP. A quick grep across those files finds zero imports from either. That means the boundary the refactor set up is actually holding today, not aspirationally."
+
+Then the technical bit:
+
+> "Zero hits for `from 'express'` or `from '@modelcontextprotocol'` across `src/services/`. Any leak here defeats the whole point of the refactor and gets caught in review. Same rule enforced upstream."
+
+### When `7/7 probes green - demo ready` prints
+
+Plain first:
+
+> "So end to end: typed context on the way in, structured errors on the way out, one shared service layer under both REST and MCP, real-time notifications wired up, and a clean boundary keeping the whole thing honest. Same architecture is now on the upstream Reference Implementation across twenty-eight merged PRs."
+
+Then the technical bit:
+
+> "This is the twelve-week arc. Blog and design of record for what comes next (**#247** for A2A, **#232** for SDK 2.0 native subscriptions) are linked in the repo README."
 
 ---
 
