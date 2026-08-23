@@ -7,13 +7,32 @@ This is a working proof-of-concept for the core architectural change proposed in
 **Author:** Jay Guwalani -- Research Scientist @ University of Maryland, College Park
 [GitHub](https://github.com/JayDS22) | jguwalan@umd.edu
 
-**APAP contributions to date:** [Issue #152](https://github.com/accordproject/apap/issues/152), [PR #153](https://github.com/accordproject/apap/pull/153), [PR #154](https://github.com/accordproject/apap/pull/154), [PR #155](https://github.com/accordproject/apap/pull/155), [Issue #143 comment](https://github.com/accordproject/apap/issues/143)
+---
+
+## Update (August 2026): where this ended up
+
+This POC was the seed for the GSoC 2026 cycle contributing to `accordproject/apap`. Twelve weeks of upstream work landed the shared service layer, typed `ServiceError` hierarchy, MCP SDK 2.0 migration, PG18 support with RLS smoke test, paged MCP resource URIs, and the design of record for the A2A wrapper.
+
+- **Blog write-up:** *(link on publish)*
+- **Final GSoC demo video (August 2026):** *(link on publish)*
+- **28 merged upstream PRs:** [`accordproject/apap` (author:JayDS22, merged)](https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged)
+- **A2A wrapper — design of record:** [issue #247](https://github.com/accordproject/apap/issues/247)
+- **Typed-context A/B evaluation harness:** [PR #3](https://github.com/JayDS22/apap-mcp-poc/pull/3) (source of the +20pp Claude Sonnet 4.6 / +38pp GPT-4o lift numbers)
+- **MCP SDK 2.0 migration on the RI:** [`accordproject/apap#227`](https://github.com/accordproject/apap/pull/227)
+- **PG18 support + RLS smoke:** [`#229`](https://github.com/accordproject/apap/pull/229), [`#245`](https://github.com/accordproject/apap/pull/245)
+- **Paged MCP resource URIs (RFC 6570):** [`#243`](https://github.com/accordproject/apap/pull/243)
+
+POC main now carries the typed-context resource (`apap://schema/protocol.cto` + `InitializeResult.instructions`) and the A2A sidecar design docs under `docs/design/a2a/`. The `demo-runbook.md` at the repo root walks a full typed-context flow end-to-end.
 
 ---
 
 ## Demo
 
-[![Demo Video](images/gsoc-2026-thumbnail.png)](https://www.youtube.com/watch?v=KFwc5IRuKUc)
+**Original proposal demo (May 2026)** — service-layer refactor and typed errors, recorded when the POC was first proposed:
+
+[![Original Proposal Demo](images/gsoc-2026-thumbnail.png)](https://www.youtube.com/watch?v=KFwc5IRuKUc)
+
+**Final GSoC demo (August 2026)** — end-to-end walkthrough of what shipped upstream over the 12-week cycle: *(link on publish)*
 
 ---
 
