@@ -1,0 +1,32 @@
+flowchart LR
+    A2A[A2A client]
+    MCP[MCP client]
+    R1[POST /a2a]
+    R2[GET /.well-known/agent-card.json]
+    R3[POST /mcp]
+    H1[jsonRpcHandler]
+    UB[UserBuilder]
+    DRH[DefaultRequestHandler]
+    EXE[ApapAgentExecutor]
+    ACH[agentCardHandler]
+    MW[authGuard middleware PR 2]
+    TR[StreamableHTTP transport]
+    REG[MCP tools and resources]
+    AUTH[AuthAdapter shared]
+    SVC[services layer]
+
+    A2A --> R1
+    A2A --> R2
+    MCP --> R3
+    R1 --> H1
+    H1 --> UB
+    UB --> DRH
+    DRH --> EXE
+    R2 --> ACH
+    R3 --> MW
+    MW --> TR
+    TR --> REG
+    UB -.->|shared| AUTH
+    MW -.->|shared| AUTH
+    EXE --> SVC
+    REG --> SVC

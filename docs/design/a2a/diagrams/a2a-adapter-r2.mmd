@@ -1,0 +1,22 @@
+flowchart LR
+    C[Any client]
+    R[POST /mcp]
+    MW[authGuard middleware PR 2]
+    D[dispatch by body.method]
+    A2AH[A2A DefaultRequestHandler]
+    TR[StreamableHTTP transport]
+    EX[ApapAgentExecutor]
+    REG[MCP tools and resources]
+    AUTH[AuthAdapter]
+    SVC[services layer]
+
+    C --> R
+    R --> MW
+    MW --> D
+    D -->|A2A methods| A2AH
+    D -->|MCP methods| TR
+    A2AH --> EX
+    TR --> REG
+    MW -.-> AUTH
+    EX --> SVC
+    REG --> SVC

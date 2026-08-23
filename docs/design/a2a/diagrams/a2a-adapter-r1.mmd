@@ -1,0 +1,23 @@
+flowchart LR
+    MCP[MCP client]
+    A2A[Standalone A2A client]
+    R[POST /mcp]
+    X[no A2A endpoint, cannot connect]
+    MW[authGuard middleware PR 2]
+    TR[StreamableHTTP transport]
+    REG[server.registerTool]
+    T1[Existing MCP tools]
+    T2[NEW a2a.* tools]
+    AUTH[AuthAdapter]
+    SVC[services layer]
+
+    MCP --> R
+    A2A -.->|fails| X
+    R --> MW
+    MW --> TR
+    TR --> REG
+    REG --> T1
+    REG --> T2
+    MW -.-> AUTH
+    T1 --> SVC
+    T2 --> SVC
