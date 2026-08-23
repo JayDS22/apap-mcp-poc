@@ -132,6 +132,9 @@ describe('MCP StreamableHTTP Full Lifecycle', () => {
 
       expect(initResult.sessionId).toBeTruthy();
       expect(initResult.body?.result?.serverInfo?.name).toBe('apap-mcp-server');
+      // Concerto typed-context hint (accordproject/apap#185)
+      expect(initResult.body?.result?.instructions).toMatch(/Concerto/);
+      expect(initResult.body?.result?.instructions).toMatch(/apap:\/\/schema\/protocol\.cto/);
 
       // Step 2: Send initialized notification
       await fetch(`${baseUrl}/mcp`, {
@@ -161,6 +164,52 @@ describe('MCP StreamableHTTP Full Lifecycle', () => {
       expect(toolNames).toContain('trigger-agreement');
       expect(toolNames).toContain('getTemplate');
       expect(toolNames).toContain('getAgreement');
+    } finally {
+      close();
+    }
+  });
+
+  it('initialize -> read apap://schema/protocol.cto resource', async () => {
+    const db = createMockDb();
+    const app = createTestApp(db);
+    const { port, close } = await listen(app);
+    const baseUrl = `http://127.0.0.1:${port}`;
+
+    try {
+      const initResult = await sendMcpRequest(baseUrl, null, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-03-26',
+          capabilities: {},
+          clientInfo: { name: 'test-client', version: '1.0.0' },
+        },
+      });
+
+      await fetch(`${baseUrl}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream, application/json',
+          'mcp-session-id': initResult.sessionId,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+      });
+
+      const readResult = await sendMcpRequest(baseUrl, initResult.sessionId, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'resources/read',
+        params: { uri: 'apap://schema/protocol.cto' },
+      });
+
+      const contents = readResult.body?.result?.contents;
+      expect(contents).toBeDefined();
+      expect(contents.length).toBe(1);
+      expect(contents[0].uri).toBe('apap://schema/protocol.cto');
+      expect(contents[0].mimeType).toBe('text/x-concerto');
+      expect(contents[0].text).toMatch(/namespace org\.accordproject\.protocol/);
     } finally {
       close();
     }
