@@ -23,6 +23,36 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('mcp-handler');
 
+// Forward-looking cache hints for MCP `ReadResourceResult.contents[]`, mirroring
+// the shape proposed in SEP-2549 ("CacheableResult") in the MCP 2026-07-28 RC:
+//   https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate
+// Defaults are chosen by mutability of each resource: lists are volatile and
+// per-client (private), single templates are hash-immutable (public, 5min), and
+// single agreements are short-lived because the row can be triggered/updated.
+// Both fields are emitted alongside `uri`/`mimeType`/`text` so the SEP wire
+// shape lands as-is once the SDK accepts them at the top level; the current
+// SDK's request/response path is pass-through (no schema strip), so they reach
+// MCP clients today as forward-compatible hints.
+//
+// TODO: once the Concerto schema resource (apap://schema/protocol.cto) lands
+// on main via PR #199, re-add a `schema` key with
+// { ttlMs: 86_400_000, cacheScope: 'public' } since the bundled .cto ships
+// with the build and only turns over on redeploy.
+type CacheScope = 'public' | 'private';
+interface CacheHint { ttlMs: number; cacheScope: CacheScope }
+const CACHE_TEMPLATE_LIST: CacheHint = { ttlMs: 60_000, cacheScope: 'private' };
+const CACHE_TEMPLATE_ITEM: CacheHint = { ttlMs: 300_000, cacheScope: 'public' };
+const CACHE_AGREEMENT_LIST: CacheHint = { ttlMs: 30_000, cacheScope: 'private' };
+const CACHE_AGREEMENT_ITEM: CacheHint = { ttlMs: 30_000, cacheScope: 'private' };
+
+// Re-export for tests and any future consumers; keeps the cache policy in one place.
+export const CACHE_HINTS = {
+  templateList: CACHE_TEMPLATE_LIST,
+  templateItem: CACHE_TEMPLATE_ITEM,
+  agreementList: CACHE_AGREEMENT_LIST,
+  agreementItem: CACHE_AGREEMENT_ITEM,
+} as const;
+
 // Session-to-transport maps. StreamableHTTP needs this so follow-up
 // requests get routed to the transport that handled initialization.
 const transports: Record<string, StreamableHTTPServerTransport> = {};
@@ -100,7 +130,10 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
 
   // -- Resources --
 
-  // List all templates
+  // List all templates.
+  // Cache fields (ttlMs/cacheScope) mirror SEP-2549; the SDK's TS types for
+  // ReadResourceResult.contents[] are augmented in src/types/mcp-augmentation.d.ts
+  // so the spread typechecks without per-callsite casts.
   server.resource('templates', 'apap://templates', async (uri: URL) => {
     const templates = await listTemplates(db);
     return {
@@ -108,6 +141,7 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
         uri: `apap://templates/${t.id}`,
         mimeType: 'application/json' as const,
         text: JSON.stringify(t),
+        ...CACHE_TEMPLATE_LIST,
       })),
     };
   });
@@ -120,6 +154,7 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
         uri: `apap://agreements/${a.id}`,
         mimeType: 'application/json' as const,
         text: JSON.stringify({ ...a.data as object, $identifier: a.id }, null, 2),
+        ...CACHE_AGREEMENT_LIST,
       })),
     };
   });
@@ -148,6 +183,7 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
             uri: uri.toString(),
             mimeType: 'application/json' as const,
             text: JSON.stringify(agreement),
+            ...CACHE_AGREEMENT_ITEM,
           },
         ],
       };
@@ -178,6 +214,7 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
             uri: uri.toString(),
             mimeType: 'application/json' as const,
             text: JSON.stringify(template),
+            ...CACHE_TEMPLATE_ITEM,
           },
         ],
       };
