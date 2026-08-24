@@ -8,13 +8,13 @@ Blog referenced throughout: `docs/blog/final-2026.md`.
 
 ## Beat 1: intro + the pre-GSoC HTTP loop (0:50)
 
-**Screen 1 (first 20s):** blog header (icons + title) or a title-card slide with name + project + mentors.
+**Screen 1 (first 20s):** blog header (icons + title) as a static background, with a small face-cam overlay in the bottom-right corner (~25% width). See the Recording setup section below for OBS scene configuration.
 
 **Narration (~20s):**
 
 > "Hi, I'm Jay Guwalani, GSoC 2026 contributor at Accord Project working on Idea #4, Hardening the APAP/MCP Server. This is the end-to-end walkthrough of what shipped over twelve weeks, mentored by Niall Roche and Dan Selman."
 
-**Screen 2 (next 30s):** browser tab or file snippet.
+**Screen 2 (next 30s):** browser tab or file snippet. **Hide the face-cam overlay now** (click the eye icon on the webcam source in OBS, or switch scenes). Terminal + browser only for the rest of the video.
 
 Show the blog `§02` code block or the pre-GSoC `mcp.ts` blame view:
 
@@ -204,7 +204,27 @@ Fade.
   6. Blog `§09` (open questions)
 - [ ] macOS Do Not Disturb ON, Discord + Mail closed
 - [ ] Terminal font at least 16pt so text reads at 720p on YouTube
-- [ ] Test QuickTime recording for 30 seconds first; verify audio + screen both capture
+- [ ] OBS Studio scene configured (see Recording setup below): Display Capture + Video Capture Device overlay + Audio Input Capture
+- [ ] Test OBS recording for 30 seconds first; verify audio, screen, and face cam all capture cleanly
+
+## Recording setup
+
+Use OBS Studio (free, macOS universal binary from https://obsproject.com/download). QuickTime cannot composite a face-cam overlay onto a screen recording; OBS can.
+
+One-time setup (~15 min):
+
+1. Install OBS from the URL above.
+2. Grant three macOS permissions in System Settings, Privacy and Security: Screen Recording, Camera, Microphone. Restart OBS after each grant.
+3. Create a scene. Add three sources:
+   - Display Capture (main screen)
+   - Video Capture Device (built-in FaceTime HD Camera or external webcam)
+   - Audio Input Capture (built-in mic or external)
+4. Position the webcam source: drag to bottom-right, resize to ~25% width, right-click and use Transform > Fit to bounding box.
+5. Settings > Output > Recording Format: MP4. Recording Path: Desktop or Movies.
+
+For the beat 1 to beat 2 transition, click the eye icon next to the webcam source in the Sources panel to hide it. Alternative: create two scenes (Intro-with-cam, Screen-only) and switch between them mid-recording.
+
+Apple Silicon note: if the webcam preview stutters, drop the resolution in Video Capture Device Properties to 1280x720. 720p is fine for a corner overlay.
 
 ## Timing at a glance
 
