@@ -6,9 +6,15 @@ Blog referenced throughout: `docs/blog/final-2026.md`.
 
 ---
 
-## Beat 1: the pre-GSoC HTTP loop (0:30)
+## Beat 1: intro + the pre-GSoC HTTP loop (0:50)
 
-**Screen:** browser tab or file snippet.
+**Screen 1 (first 20s):** blog header (icons + title) or a title-card slide with name + project + mentors.
+
+**Narration (~20s):**
+
+> "Hi, I'm Jay Guwalani, GSoC 2026 contributor at Accord Project working on Idea #4, Hardening the APAP/MCP Server. This is the end-to-end walkthrough of what shipped over twelve weeks, mentored by Niall Roche and Dan Selman."
+
+**Screen 2 (next 30s):** browser tab or file snippet.
 
 Show the blog `§02` code block or the pre-GSoC `mcp.ts` blame view:
 
@@ -24,7 +30,7 @@ Cut to Terminal 1.
 
 ---
 
-## Beat 2: live 8-probe run on the POC (3:00)
+## Beat 2: live 8-probe run on the POC + test suite (3:20)
 
 **Screen:** Terminal 1 (iTerm2, 16pt+ font, black background).
 
@@ -57,13 +63,43 @@ Bottom line must read: **`8/8 probes green - demo ready`**
 
 **Optional Terminal 2** (side by side): `docker compose logs -f apap-mcp-poc-server-1` shows JSON-RPC traffic hitting the server in real time. Visual bonus, not required.
 
-Transition: at `8/8 probes green`, cut to browser.
+### Test suite proof (~20s, at end of beat 2)
+
+Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims:
+
+```bash
+npm test 2>&1 | tail -10
+```
+
+Shows 65 tests passing with a coverage summary. `src/services/` should read at least `97%` statement coverage.
+
+**Narration:**
+
+> "Full test suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression fails the run."
+
+Transition: cut to browser.
 
 ---
 
-## Beat 3: beyond the proposal (3:30)
+## Beat 3: beyond the proposal (3:40)
 
-Three ~60s sub-beats. Pre-stage 3 browser tabs.
+Opens with a scale visual in the terminal, then three ~60s sub-beats in the browser. Pre-stage 3 browser tabs.
+
+### Scale visual (10s, at start of beat 3)
+
+Terminal (still the one from beat 2):
+
+```bash
+gh pr list --repo accordproject/apap --author @me --state merged --limit 50 | wc -l
+```
+
+Expected output: `28`
+
+**Narration:**
+
+> "Twenty-eight PRs into the upstream repo over the twelve weeks. Here's what they cover."
+
+Cut to browser.
 
 ### 3a: MCP SDK 2.0 migration (60s)
 
@@ -121,7 +157,7 @@ Point at R1/R2:
 
 ---
 
-## Beat 5: what's next + close (1:00)
+## Beat 5: what's next + close (1:10)
 
 **Tab:** blog `§09` three open questions block.
 
@@ -134,6 +170,10 @@ Scroll and read:
 **Narration:**
 
 > "These are the questions this GSoC cycle did not resolve. The next contributor who does shapes the pattern the ecosystem picks up."
+
+**Just before closing shot, narration (~10s):**
+
+> "Twelve weeks of review and architectural sparring from Niall Roche and Dan Selman shaped every decision. Full acknowledgments in the blog."
 
 **Closing shot:** blog header (icons + title).
 
@@ -150,7 +190,11 @@ Fade.
 - [ ] `docker compose down && docker compose up -d --build` succeeds
 - [ ] `curl http://localhost:9000/healthz` returns `{"status":"ok",...}`
 - [ ] `./demo-runner.sh` dry-run prints **`8/8 probes green - demo ready`**
+- [ ] `npm test 2>&1 | tail -10` prints all tests green with coverage summary
+- [ ] `gh pr list --repo accordproject/apap --author @me --state merged --limit 50 | wc -l` returns exactly `28`
+- [ ] `gh auth status` shows authenticated (needed for the scale-visual command on-camera)
 - [ ] Optional: seed a few extra templates via `POST /templates` before recording so PROBE 5 shows "3 records = 3 records" instead of "1 = 1"; punchier visual
+- [ ] Title-card slide ready for the first 20s of beat 1 (name, project, mentors) OR blog header pulled up in a browser tab as the intro screen
 - [ ] Six browser tabs pre-loaded and pinned in a private window (blocks notifications):
   1. Pre-GSoC `mcp.ts` snippet or blog `§02`
   2. PR **#227** diff (SDK 2.0)
@@ -162,16 +206,58 @@ Fade.
 - [ ] Terminal font at least 16pt so text reads at 720p on YouTube
 - [ ] Test QuickTime recording for 30 seconds first; verify audio + screen both capture
 
+## Timing at a glance
+
+| Beat | Duration | Running total |
+|:---|:---:|:---:|
+| 1: intro + cold open | 0:50 | 0:50 |
+| 2: live 8-probe run + test suite | 3:20 | 4:10 |
+| 3: scale visual + beyond the proposal (3 sub-beats) | 3:40 | 7:50 |
+| 4: A2A design of record | 2:00 | 9:50 |
+| 5: open questions + mentor thanks + close | 1:10 | 11:00 |
+
+Video runs ~11 min. If a strict 10-min ceiling matters (some GSoC tracks prefer it), trim beat 4 by 30s (drop the R1/R2 walk, keep sidecar diagram + auth-adapter note only), or shave beat 3c PG18 walk to 30s.
+
 ## After recording
 
 - Trim in iMovie or DaVinci Resolve free
-- Aim for 8 to 10 min final length
+- Aim for 8 to 11 min final length
 - Upload to YouTube unlisted first, share URL for review, then flip to public
+- Paste the YouTube description block below into the video description before flipping public
 - Once URL is stable, patch it into:
   - `README.md` at the "Final GSoC demo video (August 2026)" slot
-  - `docs/blog/final-2026.md` if you want it embedded in the blog
+  - `docs/blog/final-2026.md` if the blog should embed it
   - `accordproject/apap` blog PR (**#250**) via a follow-up commit
   - The AP WordPress blog post via a DM to Sanket + Diana
+
+## YouTube description template
+
+Paste this into the video description before flipping the upload from unlisted to public. Replace the video URL placeholders inline (chapters are timestamp anchors YouTube parses automatically from `0:00`-style lines).
+
+```
+GSoC 2026 final work-product walkthrough for Idea #4: Hardening the APAP/MCP Server.
+
+Twelve weeks of upstream work on accordproject/apap: shared service layer with typed errors, MCP SDK 2.0 migration, PG18 with RLS smoke, paged MCP resource URIs, SEP-2549 cache hints, and A2A sidecar as design of record. Typed context lifts frontier-model agent performance by +20pp on Claude Sonnet 4.6 and +38pp on GPT-4o on a first-pass three-arm A/B.
+
+Links:
+- Blog: https://github.com/JayDS22/apap-mcp-poc/blob/main/docs/blog/final-2026.md
+- POC repo: https://github.com/JayDS22/apap-mcp-poc
+- Upstream: https://github.com/accordproject/apap
+- A2A design of record: https://github.com/accordproject/apap/issues/247
+- Blog PR upstream: https://github.com/accordproject/apap/pull/250
+
+Chapters:
+0:00 Intro
+0:20 The pre-GSoC HTTP loop
+0:50 Live 8-probe demo on POC (typed context, service layer, subscriptions, cache hints)
+4:10 Twenty-eight upstream PRs + beyond the proposal (SDK 2.0, A/B eval, PG18 + RLS)
+7:50 A2A sidecar as design of record
+9:50 Open questions + close
+
+Mentors: Niall Roche, Dan Selman
+Community: Sanket Shevkar, Matt Roberts, Steven Obiajulu, Sonia Duma
+Hosted by the Linux Foundation.
+```
 
 ## What this script does NOT try to demo on the POC
 
