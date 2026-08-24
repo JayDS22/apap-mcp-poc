@@ -57,7 +57,61 @@ curl -s http://localhost:9000/healthz    # expect {"status":"ok",...}
 | 7 | Service layer purity (0 forbidden imports) | `§04` boundary enforcement |
 | 8 | SEP-2549 cache hints (`ttlMs` + `cacheScope`) | `§06` via **#201** |
 
-**Narration:** use the plain-English + technical lines from `demo-runbook.md` per probe. Each probe has both a lay-audience line and a mentor-audience line.
+**Narration per probe** (plain-English line for anyone in the room, technical line for the mentor-audience). Delivered as each probe prints:
+
+### PROBE 1 (typed-context hint)
+
+> Plain: "So the server just told the client, in plain terms, my responses are typed objects and here is where the type definitions live. That is how an AI on the other end knows to treat what it gets back as agreements or templates, not raw JSON blobs."
+
+> Technical: "The instructions string is from PR 199. Every MCP client sees it on the initialize handshake, one time. 357 characters, static, no per-request cost."
+
+### PROBE 2 (resources)
+
+> Plain: "Client just asked what have you got. It gets back templates and agreements, which you would expect. The new thing here is the third entry: the server is offering the AI a copy of its own dictionary."
+
+> Technical: "That new resource is `apap://schema/protocol.cto`, added in 199. Templates and agreements were already there."
+
+### PROBE 3 (Concerto schema)
+
+> Plain: "And the client just fetched that dictionary. About seven thousand characters of the protocol model. Any AI reading this can now match every type marker it sees in later responses to a real definition, without needing to look it up somewhere else or guess."
+
+> Technical: "7,202 bytes, mime type `text/x-concerto`. That is the canonical Concerto model, served from the bundled file in the container. Cached on first read."
+
+### PROBE 4 (typed error)
+
+> Plain: "This is the failure mode. Client asked for an agreement that does not exist. Before this work, the AI on the other end would get back a text blob with the error jammed into it, and it could not do anything programmatic with that. Now it gets a structured error with a code the AI can read directly, so it can tell that record does not exist apart from the server is broken and react accordingly."
+
+> Technical: "Payload is `code: AGREEMENT_NOT_FOUND`, human message, and `details.identifier: 999999`. That is PR 200 wired end to end. On the RI before this work you would get a stringified concatenation the client cannot branch on."
+
+### PROBE 5 (shared service layer)
+
+> Plain: "Same server, same database, two different ways to ask. A normal HTTP client hits `/templates` over REST. An AI agent asks over MCP through a resource read. Both come back with the exact same rows because they call the same service function under the hood. That is the whole refactor in one screen."
+
+> Technical: "REST route and MCP resource both go through `listTemplates` in `src/services/templateService.ts`. No `makeApiRequest` loop, no localhost round-trip. Slices 1 through 5 upstream, PR 211 through PR 225, landed the same pattern in the RI."
+
+### PROBE 6 (subscriptions/listen)
+
+> Plain: "The AI just asked the server, let me know when things change. The server said yes and handed back a subscription id. From this point on, if anyone modifies a template or an agreement, the AI hears about it in real time. It does not have to poll."
+
+> Technical: "SEP-2575 preview handler wired via the underlying server request handler, registered against the URIs the client asked for. The 2026-07-28 MCP RC formalises the same shape natively. Tracking issue for the SDK 2.0 native version is 232."
+
+### PROBE 7 (service layer purity)
+
+> Plain: "This next one is a boundary check. The rule is that the service layer files, the ones that actually talk to the database, are not allowed to know anything about HTTP or MCP. A quick grep across those files finds zero imports from either. That means the boundary the refactor set up is actually holding today, not aspirationally."
+
+> Technical: "Zero hits for `from 'express'` or `from '@modelcontextprotocol'` across `src/services/`. Any leak here defeats the whole point of the refactor and gets caught in review. Same rule enforced upstream."
+
+### PROBE 8 (SEP-2549 cache hints)
+
+> Plain: "Last piece. Every response now tells the client how long it can cache the answer and whether the answer is public or private. Lists are volatile and per-client so the cache is short. The schema file is stable and shared, so it can be cached for a day. Removes a lot of redundant round-trips agents would otherwise make."
+
+> Technical: "Wire shape from SEP-2549 in the MCP 2026-07-28 RC. `ttlMs` plus `cacheScope` on every `contents[]` entry. Landed as PR 201 upstream."
+
+### When `8/8 probes green - demo ready` prints
+
+> Plain: "So end to end: typed context on the way in, structured errors on the way out, one shared service layer under both REST and MCP, real-time notifications wired up, cache hints on every response, and a clean boundary keeping the whole thing honest. Same architecture is now on the upstream Reference Implementation across twenty-eight merged PRs."
+
+> Technical: "This is the twelve-week arc. Blog and design of record for what comes next, issue 247 for A2A and issue 232 for SDK 2.0 native subscriptions, are linked in the repo README."
 
 Bottom line must read: **`8/8 probes green - demo ready`**
 
