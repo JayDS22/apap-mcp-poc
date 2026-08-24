@@ -14,6 +14,7 @@
 #   PROBE 5 - shared service layer     (REST + MCP see the same rows)
 #   PROBE 6 - subscriptions/listen     (SEP-2575 preview handler)
 #   PROBE 7 - service layer purity     (no Express/SDK imports under services/)
+#   PROBE 8 - SEP-2549 cache hints     (ReadResource returns ttlMs+cacheScope)
 #
 # Requirements:
 #   - bash 4+ (works on macOS bash 3.2 too, no associative arrays used)
@@ -25,7 +26,7 @@
 # Usage:
 #   ./demo-runner.sh
 #
-# A fully green run prints "7/7 probes green - demo ready" at the bottom and
+# A fully green run prints "8/8 probes green - demo ready" at the bottom and
 # exits 0. Any red PROBE line indicates a regression that must be fixed before
 # recording.
 # ============================================================================
@@ -55,6 +56,7 @@ PROBE4_OK=0
 PROBE5_OK=0
 PROBE6_OK=0
 PROBE7_OK=0
+PROBE8_OK=0
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -411,16 +413,54 @@ else
 fi
 separator
 
+sleep "$PACE"
+
+# ---------------------------------------------------------------------------
+# PROBE 8 - SEP-2549 cache hints (ttlMs + cacheScope on ReadResource)
+# ---------------------------------------------------------------------------
+say_bold "[PROBE 8] SEP-2549 cache hints  (ReadResource contents carry ttlMs + cacheScope)"
+
+# Reuse the templates resource read from PROBE 5.
+HINT_TTL="$(printf   '%s' "$MCP_TEMPLATES_JSON" | jq -r '.result.contents[0].ttlMs      // empty' 2>/dev/null)"
+HINT_SCOPE="$(printf '%s' "$MCP_TEMPLATES_JSON" | jq -r '.result.contents[0].cacheScope // empty' 2>/dev/null)"
+
+# Also read the immutable schema resource to show a different cache policy.
+SCHEMA_READ_PAYLOAD='{"jsonrpc":"2.0","id":8,"method":"resources/read","params":{"uri":"apap://schema/protocol.cto"}}'
+SCHEMA_RAW="$(
+  curl -sS \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "mcp-session-id: ${SESSION_ID}" \
+    -X POST \
+    --data "$SCHEMA_READ_PAYLOAD" \
+    "$MCP_URL"
+)"
+SCHEMA_JSON="$(printf '%s' "$SCHEMA_RAW" | sse_to_json)"
+SCHEMA_TTL="$(printf   '%s' "$SCHEMA_JSON" | jq -r '.result.contents[0].ttlMs      // empty' 2>/dev/null)"
+SCHEMA_SCOPE="$(printf '%s' "$SCHEMA_JSON" | jq -r '.result.contents[0].cacheScope // empty' 2>/dev/null)"
+
+if [ -z "$HINT_TTL" ] || [ -z "$HINT_SCOPE" ] || [ -z "$SCHEMA_TTL" ] || [ -z "$SCHEMA_SCOPE" ]; then
+  say_red "PROBE 8 FAILED - ReadResource contents missing SEP-2549 cache fields"
+  say_dim "  templates ttlMs='${HINT_TTL}' cacheScope='${HINT_SCOPE}'"
+  say_dim "  schema    ttlMs='${SCHEMA_TTL}' cacheScope='${SCHEMA_SCOPE}'"
+else
+  say_green "SEP-2549 cache hints present:"
+  printf "${GREEN}  apap://templates${RESET}                ttlMs=%s ms  scope=%s\n" "$HINT_TTL" "$HINT_SCOPE"
+  printf "${GREEN}  apap://schema/protocol.cto${RESET}      ttlMs=%s ms  scope=%s\n" "$SCHEMA_TTL" "$SCHEMA_SCOPE"
+  PROBE8_OK=1
+fi
+separator
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
-PASS=$(( PROBE1_OK + PROBE2_OK + PROBE3_OK + PROBE4_OK + PROBE5_OK + PROBE6_OK + PROBE7_OK ))
+PASS=$(( PROBE1_OK + PROBE2_OK + PROBE3_OK + PROBE4_OK + PROBE5_OK + PROBE6_OK + PROBE7_OK + PROBE8_OK ))
 
 printf "\n"
-if [ "$PASS" -eq 7 ]; then
-  say_green "7/7 probes green - demo ready"
+if [ "$PASS" -eq 8 ]; then
+  say_green "8/8 probes green - demo ready"
   exit 0
 else
-  say_red "${PASS}/7 probes green - see above"
+  say_red "${PASS}/8 probes green - see above"
   exit 1
 fi

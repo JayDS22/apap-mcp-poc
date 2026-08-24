@@ -1,6 +1,6 @@
 # GSoC 2026 final demo runbook
 
-Idea #4, Hardening the APAP/MCP Server. Seven-probe runner covering the twelve-week arc: typed-context hint, resource discovery, Concerto schema fetch, typed error, shared service layer (REST + MCP on one source), subscriptions/listen preview, and a service-layer purity check. Originally scripted for the July mid-eval and extended to seven probes for the August final; the narration is past-tense on the upstream PRs (`#211` through `#225` for the service-layer slices, `#184` and `#200` for typed errors, `#199` for typed context).
+Idea #4, Hardening the APAP/MCP Server. Eight-probe runner covering the twelve-week arc: typed-context hint, resource discovery, Concerto schema fetch, typed error, shared service layer (REST + MCP on one source), subscriptions/listen preview, service-layer purity check, and SEP-2549 cache hints. Originally scripted for the July mid-eval and extended for the August final; the narration is past-tense on the upstream PRs (`#211` through `#225` for the service-layer slices, `#184` and `#200` for typed errors, `#199` for typed context, `#201` for cache hints).
 
 Each section: the command on top, one or two lines to say underneath. Copy the command, say the line, move on.
 
@@ -31,7 +31,7 @@ Expect `{"status":"ok","timestamp":"..."}`. If not, do not roll tape / do not jo
 ./demo-runner.sh
 ```
 
-Bottom line must read `7/7 probes green - demo ready`. If any probe is red, fix before recording.
+Bottom line must read `8/8 probes green - demo ready`. If any probe is red, fix before recording.
 
 **4. Optional: server logs pane.** Second terminal, keep it visible next to the demo pane:
 
@@ -53,7 +53,7 @@ Say the plain-English part first, then the technical bridge. The plain part is f
 
 Then bridge into the technical framing:
 
-> "One script, seven probes covering the twelve-week arc: typed context, resource discovery, Concerto schema, typed errors, shared service layer, subscriptions, and a boundary check. Same shape I brought upstream through the slice sequence **#211** through **#225**."
+> "One script, eight probes covering the twelve-week arc: typed context, resource discovery, Concerto schema, typed errors, shared service layer, subscriptions, boundary check, and cache hints. Same shape I brought upstream through the slice sequence **#211** through **#225**."
 
 ### Run the script
 
@@ -135,7 +135,17 @@ Then the technical bit:
 
 > "Zero hits for `from 'express'` or `from '@modelcontextprotocol'` across `src/services/`. Any leak here defeats the whole point of the refactor and gets caught in review. Same rule enforced upstream."
 
-### When `7/7 probes green - demo ready` prints
+### While PROBE 8 prints (SEP-2549 cache hints)
+
+Plain first:
+
+> "Last piece. Every response now tells the client how long it can cache the answer and whether the answer is public or private. Lists are volatile and per-client so the cache is short. The schema file is stable and shared, so it can be cached for a day. Removes a lot of redundant round-trips agents would otherwise make."
+
+Then the technical bit:
+
+> "Wire shape from SEP-2549 in the MCP 2026-07-28 RC. `ttlMs` plus `cacheScope` on every `contents[]` entry. Landed as **#201** upstream."
+
+### When `8/8 probes green - demo ready` prints
 
 Plain first:
 

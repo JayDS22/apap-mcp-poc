@@ -25,6 +25,27 @@ import { createLogger } from '../middleware/logging.js';
 
 const logger = createLogger('mcp-handler');
 
+// Forward-looking cache hints for MCP ReadResourceResult.contents[], mirroring
+// SEP-2549 (CacheableResult) from the MCP 2026-07-28 RC. Defaults chosen by
+// mutability: lists volatile + per-client (private), single templates
+// hash-immutable (public, 5min), single agreements short-lived because rows
+// mutate on trigger, bundled schema resource 24h public.
+type CacheScope = 'public' | 'private';
+interface CacheHint { ttlMs: number; cacheScope: CacheScope }
+const CACHE_SCHEMA: CacheHint = { ttlMs: 86_400_000, cacheScope: 'public' };
+const CACHE_TEMPLATE_LIST: CacheHint = { ttlMs: 60_000, cacheScope: 'private' };
+const CACHE_TEMPLATE_ITEM: CacheHint = { ttlMs: 300_000, cacheScope: 'public' };
+const CACHE_AGREEMENT_LIST: CacheHint = { ttlMs: 30_000, cacheScope: 'private' };
+const CACHE_AGREEMENT_ITEM: CacheHint = { ttlMs: 30_000, cacheScope: 'private' };
+
+export const CACHE_HINTS = {
+  schema: CACHE_SCHEMA,
+  templateList: CACHE_TEMPLATE_LIST,
+  templateItem: CACHE_TEMPLATE_ITEM,
+  agreementList: CACHE_AGREEMENT_LIST,
+  agreementItem: CACHE_AGREEMENT_ITEM,
+} as const;
+
 // Concerto-typed-context hint exposed via MCP InitializeResult.instructions.
 // Tells the model that response payloads are Concerto-serialized objects so it
 // can interpret `$class` discriminators directly, per accordproject/apap#185.
@@ -146,8 +167,9 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
           uri: uri.toString(),
           mimeType: 'text/x-concerto',
           text: loadProtocolCto(),
+          ...CACHE_SCHEMA,
         },
-      ],
+      ] as unknown as Array<{ uri: string; mimeType: string; text: string }>,
     }),
   );
 
@@ -159,7 +181,8 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
         uri: `apap://templates/${t.id}`,
         mimeType: 'application/json' as const,
         text: JSON.stringify(t),
-      })),
+        ...CACHE_TEMPLATE_LIST,
+      })) as unknown as Array<{ uri: string; mimeType: string; text: string }>,
     };
   });
 
@@ -171,7 +194,8 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
         uri: `apap://agreements/${a.id}`,
         mimeType: 'application/json' as const,
         text: JSON.stringify({ ...a.data as object, $identifier: a.id }, null, 2),
-      })),
+        ...CACHE_AGREEMENT_LIST,
+      })) as unknown as Array<{ uri: string; mimeType: string; text: string }>,
     };
   });
 
@@ -199,8 +223,9 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
             uri: uri.toString(),
             mimeType: 'application/json' as const,
             text: JSON.stringify(agreement),
+            ...CACHE_AGREEMENT_ITEM,
           },
-        ],
+        ] as unknown as Array<{ uri: string; mimeType: string; text: string }>,
       };
     },
   );
@@ -229,8 +254,9 @@ function createMcpServer(db: Database, getSessionId: () => string): McpServer {
             uri: uri.toString(),
             mimeType: 'application/json' as const,
             text: JSON.stringify(template),
+            ...CACHE_TEMPLATE_ITEM,
           },
-        ],
+        ] as unknown as Array<{ uri: string; mimeType: string; text: string }>,
       };
     },
   );
