@@ -79,9 +79,9 @@ curl -s http://localhost:9000/healthz    # expect {"status":"ok",...}
 
 ### PROBE 4 (typed error)
 
-> Plain: "This is the failure mode. Client asked for an agreement that does not exist. Before this work, the AI on the other end would get back a text blob with the error jammed into it, and it could not do anything programmatic with that. Now it gets a structured error with a code the AI can read directly, so it can tell that record does not exist apart from the server is broken and react accordingly."
+> Plain: "Flip the same server to the failure mode. Client asks for an agreement that does not exist. Instead of a text blob with the error string jammed inside, the AI gets a structured error with a code it can read directly, so it can tell that record does not exist apart from the server is broken and act on it."
 
-> Technical: "Payload is `code: AGREEMENT_NOT_FOUND`, human message, and `details.identifier: 999999`. That is PR 200 wired end to end. On the RI before this work you would get a stringified concatenation the client cannot branch on."
+> Technical: "On the wire, the payload carries `code: AGREEMENT_NOT_FOUND`, a human message, and `details.identifier: 999999`. Same pattern extends across every ServiceError subclass in the shared layer. PR 200 upstream."
 
 ### PROBE 5 (shared service layer)
 
