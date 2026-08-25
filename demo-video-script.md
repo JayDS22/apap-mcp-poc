@@ -43,29 +43,29 @@ Pre-stage commands (run in this order). Do not type these in silence; each comma
 ```bash
 cd ~/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 ```
-> "Repo root. This is the POC I built for this project. Public on GitHub if you want to clone and run this after the video."
+> "Alright, let me pull up the POC. This is the codebase I built for the project. It's public on GitHub if you want to clone and follow along later."
 
 ```bash
 docker compose down
 ```
-> "Clean slate first. Tear down anything left from an earlier run."
+> "Clean slate first. Let me tear down anything left from an earlier run."
 
 ```bash
 docker compose up -d --build
 ```
-> "Bring it up fresh. Postgres, the Express server, and the MCP transport, all in one Compose stack."
+> "And bring it back up fresh. Postgres, the Express server, and the MCP transport, all coming up together in one Compose stack."
 
 **Cut the ~30s Docker boot in post-production.** Splice from the `docker compose up` command straight to the "Container Started" line so viewers do not sit through dead air.
 
 ```bash
 curl -s http://localhost:9000/healthz
 ```
-> "Confirm it's up. Health check returns ok, so we're good to run the probes."
+> "OK, quick health check to make sure it came up clean. Server says ok, so we're good to run the probes."
 
 ```bash
 ./demo-runner.sh
 ```
-> "This runs eight probes end to end against the MCP surface. Each probe answers one question about what the twelve-week refactor actually did. Watching each one in turn."
+> "Alright, running the demo script now. This fires eight probes end to end against the MCP surface, one per major thing the twelve-week refactor changed. Let's watch them go."
 
 **What each probe demonstrates:**
 
@@ -126,7 +126,7 @@ Bottom line must read: **`8/8 probes green - demo ready`**
 
 Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims. Narrate while typing:
 
-> "Eight probes was the demo. The safety net that keeps this from regressing is the test suite. Let me run it."
+> "So that's the demo. The safety net that keeps all of this from silently regressing is the test suite. Let me run it real quick."
 
 ```bash
 npm test 2>&1 | tail -10
@@ -134,7 +134,7 @@ npm test 2>&1 | tail -10
 
 Test suite takes ~10-15 seconds. Narrate WHILE it runs:
 
-> "Full suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression fails the run."
+> "There we go, full suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression on that layer fails the run."
 
 **Bridge into Beat 3:**
 
