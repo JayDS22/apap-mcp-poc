@@ -43,7 +43,7 @@ Pre-stage commands (run in this order). Do not type these in silence; each comma
 ```bash
 cd ~/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 ```
-> "Alright, let me pull up the POC. This is the codebase I built for the project."
+> "Alright, let me pull up the POC. This is the codebase I built for the project. It's public on GitHub if you want to clone and follow along later."
 
 ```bash
 docker compose down
@@ -142,7 +142,7 @@ Bottom line must read: **`8/8 probes green - demo ready`**
 
 Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims. Narrate while typing:
 
-> "That's the demo. Test suite next, same coverage that keeps this from silently regressing."
+> "So that's the demo. The safety net that keeps all of this from silently regressing is the test suite. Let me run it real quick."
 
 ```bash
 npm test 2>&1 | tail -10
