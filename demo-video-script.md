@@ -80,12 +80,12 @@ Inspector prints an auth-token URL to stdout, roughly `http://localhost:6274?MCP
 
 Save + Connect. The server appears in the servers list. Click it to open its Tools/Resources/Server-Info tabs.
 
-**Inspector UI navigation cheat sheet** (Inspector 2.3 layout, so you don't have to hunt on camera):
+**Inspector UI cheat sheet:**
 
-- The tabs (Tools, Resources, Prompts, Notifications, Server Info) live in a **left sidebar** on the connected-server view, or as a **top nav bar** depending on window width.
-- Click a tab, and the list of items for that category appears in the **main content area** to the right.
-- Each item in the list is clickable; clicking expands the item OR opens a detail view with parameter forms + Run/Call buttons.
-- For this demo, you're only clicking to show the LIST view for Tools and Resources. Only the schema resource gets clicked-into to render its content.
+- Tabs (Tools / Resources / Prompts / Notifications / Server Info) → left sidebar OR top nav
+- Click tab → list appears in main area
+- Click item → expands or opens detail view
+- **This demo:** show LIST view for Tools + Resources; click INTO only `apap://schema/protocol.cto`
 
 **Pre-record view:** Connected server open, Tools tab selected so viewers see the 4 tools listed the instant the recording cuts to Inspector.
 
