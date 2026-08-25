@@ -2,7 +2,7 @@
 
 Ten-minute end-to-end walkthrough for the GSoC final work-product submission. Five beats: (1) cold open on the pre-GSoC HTTP loop, (2) live 8-probe run against the POC, (3) three sub-beats on what shipped upstream beyond the proposal, (4) A2A design of record, (5) open questions + close. Companion to `demo-runbook.md` (which carries the per-probe narration for beat 2).
 
-Blog referenced throughout: `docs/blog/final-2026.md`.
+Blog referenced throughout: **https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/** (the AP WordPress publication is the canonical URL for anything shown on-camera; the source markdown for the same content lives in this repo at `docs/blog/final-2026.md`).
 
 ---
 
@@ -260,14 +260,16 @@ Fade.
 - [ ] `npm test 2>&1 | tail -10` prints all tests green with coverage summary
 - [ ] Optional: seed a few extra templates via `POST /templates` before recording so PROBE 5 shows "3 records = 3 records" instead of "1 = 1"; punchier visual
 - [ ] Title-card slide ready for the first 20s of beat 1 (name, project, mentors) OR blog header pulled up in a browser tab as the intro screen
-- [ ] Seven browser tabs pre-loaded and pinned in a private window (blocks notifications):
-  1. Pre-GSoC `mcp.ts` snippet or blog `§02`
+- [ ] Seven browser tabs pre-loaded and pinned in a private window (blocks notifications). Blog tabs point at the AP WordPress publication, not the GitHub markdown, so viewers landing from the video description see the same URL that was submitted to Google.
+  1. **Blog on AP WordPress, scrolled to §02** (pre-GSoC HTTP loop): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "MCP surface was calling itself over HTTP" section pre-recording so it's already in view)
   2. **Merged-PR filter** on `accordproject/apap`: `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged` (verify the page shows 28 rows before recording)
-  3. PR **#227** diff (SDK 2.0)
-  4. Blog `§05` (A/B eval numbers)
-  5. `build.yml` RLS smoke section
-  6. Issue **#247** (A2A design of record)
-  7. Blog `§09` (open questions)
+  3. PR **#227** diff (SDK 2.0): `https://github.com/accordproject/apap/pull/227/files`
+  4. **Blog on AP WordPress, scrolled to §05** (A/B eval numbers): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "Three surfaces, same six operations" section showing Figure 3 and the +20pp / +38pp table)
+  5. `build.yml` RLS smoke section: `https://github.com/accordproject/apap/blob/main/.github/workflows/build.yml`
+  6. Issue **#247** (A2A design of record): `https://github.com/accordproject/apap/issues/247`
+  7. **Blog on AP WordPress, scrolled to §09** (open questions): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "Two things did not ship, on purpose" section and the three open questions block)
+
+Note on the three blog tabs (1, 4, 7): they all point at the same AP URL. Open the URL three times in three separate tabs and scroll each one to the right section before recording, so on-camera you switch tabs cleanly rather than scrolling the same page live. If WordPress heading anchors are stable, you can also append fragment identifiers like `#02-...` to each tab URL so each tab lands at the right section on load; verify before recording.
 - [ ] macOS Do Not Disturb ON, Discord + Mail closed
 - [ ] Terminal font at least 16pt so text reads at 720p on YouTube
 - [ ] OBS Studio scene configured (see Recording setup below): Display Capture + Video Capture Device overlay + Audio Input Capture
@@ -312,9 +314,9 @@ Video runs ~11 min. If a strict 10-min ceiling matters (some GSoC tracks prefer 
 - Paste the YouTube description block below into the video description before flipping public
 - Once URL is stable, patch it into:
   - `README.md` at the "Final GSoC demo video (August 2026)" slot
-  - `docs/blog/final-2026.md` if the blog should embed it
-  - `accordproject/apap` blog PR (**#250**) via a follow-up commit
-  - The AP WordPress blog post via a DM to Sanket + Diana
+  - The AP WordPress blog post via a DM to Sanket + Diana (they slot it into the published post)
+  - `accordproject/apap` blog PR (**#250**) via a follow-up commit if the video should be embedded upstream too
+  - `docs/blog/final-2026.md` source markdown (optional, if you want the in-repo copy to embed the video as well)
 
 ## YouTube description template
 
@@ -326,11 +328,11 @@ GSoC 2026 final work-product walkthrough for Idea #4: Hardening the APAP/MCP Ser
 Twelve weeks of upstream work on accordproject/apap: shared service layer with typed errors, MCP SDK 2.0 migration, PG18 with RLS smoke, paged MCP resource URIs, SEP-2549 cache hints, and A2A sidecar as design of record. Typed context lifts frontier-model agent performance by +20pp on Claude Sonnet 4.6 and +38pp on GPT-4o on a first-pass three-arm A/B.
 
 Links:
-- Blog: https://github.com/JayDS22/apap-mcp-poc/blob/main/docs/blog/final-2026.md
+- Blog on Accord Project: https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/
 - POC repo: https://github.com/JayDS22/apap-mcp-poc
 - Upstream: https://github.com/accordproject/apap
 - A2A design of record: https://github.com/accordproject/apap/issues/247
-- Blog PR upstream: https://github.com/accordproject/apap/pull/250
+- Blog source in repo (upstream PR): https://github.com/accordproject/apap/pull/250
 
 Chapters:
 0:00 Intro
