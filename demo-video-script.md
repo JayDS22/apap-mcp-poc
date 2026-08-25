@@ -62,25 +62,45 @@ curl -s http://localhost:9000/healthz
 ```
 > "OK, quick health check to make sure it came up clean. Server says ok, so we're good to run the probes."
 
-### MCP Inspector visual anchor (~30s, before running probes)
+### MCP Inspector visual anchor (~40s, before running probes)
 
-Before the terminal probes fire, quick browser-based view of what the server exposes. In a second terminal, launch MCP Inspector bare (Inspector 2.x moved connection config into the UI; do NOT pass transport or URL flags on the command line):
+Before the terminal probes fire, quick browser-based view of what the server exposes.
+
+**Setup (do BEFORE rolling tape).** In a second terminal, launch MCP Inspector bare (Inspector 2.x moved connection config into the UI; do NOT pass transport or URL flags on the command line):
 
 ```bash
 npx @modelcontextprotocol/inspector
 ```
 
-Inspector prints an auth-token URL to stdout, roughly `http://localhost:6274?MCP_PROXY_AUTH_TOKEN=<token>`. Open that URL in the browser. In the Inspector UI:
+Inspector prints an auth-token URL to stdout, roughly `http://localhost:6274?MCP_INSPECTOR_API_TOKEN=<token>`. Open that URL in the browser. On the Inspector home page, click **Add Server** (or the equivalent) and fill in:
 
-1. Transport Type dropdown: select `Streamable HTTP`
-2. URL field: paste `http://localhost:9000/mcp`
-3. Click Connect
+- Name: `APAP POC`
+- Transport Type: `Streamable HTTP`
+- URL: `http://localhost:9000/mcp`
 
-The Tools, Resources, and Server Info tabs populate once connected. Pre-launch and pre-connect before rolling tape so the recording just cuts to the ready state.
+Save + Connect. The server appears in the servers list. Click it to open its Tools/Resources/Server-Info tabs.
 
-Cut to the Inspector browser tab and narrate while showing the Tools tab, Resources tab, and server-info panel:
+**Pre-record view:** Tools tab selected, so viewers see the 4 tools listed the instant the recording cuts to Inspector.
 
-> "Quick visual anchor before the probes. MCP Inspector is the standard browser tool for MCP servers. Point it at the POC and here's what shows up: four tools on the left, five resources on the right, and the typed-context instructions string under server info. Same surface, visual view. Now let me run the probes in the terminal for the specifics."
+Cut to the Inspector browser tab. Then walk three views in sequence:
+
+**Click 1: Tools tab (already visible from pre-record view) (~12s)**
+
+The 4 tools are listed: `getTemplate`, `getAgreement`, `convert-agreement-to-format`, `trigger-agreement`.
+
+> "OK quick visual anchor before the probes. This is MCP Inspector, the standard browser tool for MCP servers. Point it at the POC and here's what shows up. Tools tab first: four registered tools. Each one's a real function an AI agent can call."
+
+**Click 2: Resources tab (~12s)**
+
+Five resources are listed: `apap://templates`, `apap://agreements`, `apap://templates/{templateId}`, `apap://agreements/{agreementId}`, `apap://schema/protocol.cto`.
+
+> "Resources tab: five entries. The two collections, two parameterized versions for single-item lookups, and this one, `apap://schema/protocol.cto`. That last one is the twelve-week refactor's key move."
+
+**Click 3: click the `apap://schema/protocol.cto` resource entry (~12s)**
+
+The Concerto protocol model (~7200 characters of `.cto` schema) renders in the response viewer, starting with `@description("Accord Project Agreement Protocol")`.
+
+> "Click into it and there's the Concerto protocol model rendered directly. About seven thousand characters of type definitions any AI can now read to interpret every response from this server. Same MCP surface, visual view. Now let me run the probes for the specifics."
 
 Cut back to the main terminal.
 
