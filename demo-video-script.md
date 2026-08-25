@@ -43,7 +43,7 @@ Pre-stage commands (run in this order). Do not type these in silence; each comma
 ```bash
 cd ~/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
 ```
-> "Alright, let me pull up the POC. This is the codebase I built for the project. It's public on GitHub if you want to clone and follow along later."
+> "Alright, let me pull up the POC. This is the codebase I built for the project."
 
 ```bash
 docker compose down
@@ -62,10 +62,26 @@ curl -s http://localhost:9000/healthz
 ```
 > "OK, quick health check to make sure it came up clean. Server says ok, so we're good to run the probes."
 
+### MCP Inspector visual anchor (~30s, before running probes)
+
+Before the terminal probes fire, quick browser-based view of what the server exposes. In a second terminal, launch MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector --transport streamable-http --url http://localhost:9000/mcp
+```
+
+Inspector opens at `http://localhost:6274/`. Cut to that browser tab.
+
+Narrate while showing the Tools tab, Resources tab, and server-info panel:
+
+> "Quick visual anchor before the probes. MCP Inspector is the standard browser tool for MCP servers. Point it at the POC and here's what shows up: four tools on the left, five resources on the right, and the typed-context instructions string under server info. Same surface, visual view. Now let me run the probes in the terminal for the specifics."
+
+Cut back to the main terminal.
+
 ```bash
 ./demo-runner.sh
 ```
-> "Alright, running the demo script now. This fires eight probes end to end against the MCP surface, one per major thing the twelve-week refactor changed. Let's watch them go."
+> "Running the demo script now. Eight probes end to end against the MCP surface, one per major thing the twelve-week refactor changed. Let's watch them go."
 
 **What each probe demonstrates:**
 
@@ -126,7 +142,7 @@ Bottom line must read: **`8/8 probes green - demo ready`**
 
 Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims. Narrate while typing:
 
-> "So that's the demo. The safety net that keeps all of this from silently regressing is the test suite. Let me run it real quick."
+> "That's the demo. Test suite next, same coverage that keeps this from silently regressing."
 
 ```bash
 npm test 2>&1 | tail -10
@@ -157,6 +173,14 @@ Cut from terminal to browser. Open the pre-staged blog tab scrolled to §08 (the
 The roadmap shows a colored calendar: top lane in blue for what was scoped in the May proposal, bottom lanes in green for what shipped as code, amber for design of record (A2A sidecar), grey for deferred (subscriptions on SDK 2.0 native). Pan across the image slowly while narrating:
 
 > "Twelve weeks, twenty-eight PRs merged upstream. Here's what they covered: top lane is what the May proposal scoped, bottom lanes are what actually ran. Green shipped as code, amber shipped as design of record, grey deferred to post-GSoC. Not everything landed as planned, but nothing hidden either."
+
+Then a quick 8-10s cut to the merged-PR filter tab as verification anchor:
+
+**Tab:** `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged`
+
+Pan the list of 28 rows briefly while saying:
+
+> "And here are those twenty-eight as real merged commits. Click any of them if you want to verify."
 
 Then cut to the next tab (PR #227 for sub-beat 3a).
 
@@ -200,27 +224,15 @@ Scroll to the RLS smoke test block (`set_config('app.user_id', ...)` against a `
 
 **Tab:** `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scrolled to §07 "A2A: a design, not a build", Figure 4 A2ASidecarArchitecture.png visible)
 
-Scroll through the §07 section: opening paragraphs -> Figure 4 sidecar diagram -> R1/R2 rejection reasoning -> pull-quote block.
+Scroll to Figure 4 (A2ASidecarArchitecture.png) so it's in view. Keep it visual and high-level; the depth lives in the blog and in issue 247 for anyone who wants it.
 
-**Narration on the opening paragraphs:**
+**Opening + sidecar diagram (Figure 4), ~15s:**
 
-> "A2A was scoped to a design-of-record deliverable for this cycle, not an implementation slice. The failure modes worth caring about live in the design, not the code."
+> "A2A was scoped as a design-of-record this cycle, not an implementation slice. The design is a sidecar: dedicated `POST /a2a` route alongside `POST /mcp`, sharing the same service layer beneath. Auth adapter on the A2A route only; MCP and REST stay open by design."
 
-**Point at sidecar diagram (Figure 4):**
+**High-level close + pointer to the depth, ~10s:**
 
-> "Dedicated `POST /a2a` alongside `POST /mcp` on the same Express process. Shared service layer beneath both. Auth adapter on the A2A route only, MCP and REST stay open by design."
-
-**Point at R1/R2 rejection block:**
-
-> "Two alternatives evaluated and rejected. R1 registered A2A skills as MCP tools, which fails the wire spec. R2 multiplexed both protocols on `/mcp`, which neither SDK supports. Sidecar is the choice with reasons, not a menu."
-
-**Scroll to the "Auth is table stakes" pull-quote block:**
-
-> "Auth is table stakes. The harder work sits above the adapter."
-
-**On-camera reference to full design of record:**
-
-> "Full analysis with all the alternatives and the mentor review trail lives at issue 247 on the upstream repo, link in the video description."
+> "The full walkthrough with the alternatives that were rejected, the auth-boundary reasoning, and the mentor review trail is in section 7 of the blog and at issue 247 on the upstream repo. Both linked in the description."
 
 **Bridge into Beat 5:**
 
