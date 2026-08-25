@@ -26,7 +26,11 @@ const response = await makeApiRequest('http://localhost:9000/templates');
 
 > "This is the MCP handler for `templates.list` before this GSoC cycle. Same process, same request. Server calling itself over HTTP. That's the seam this project set out to fix."
 
-Cut to Terminal 1.
+**Bridge into Beat 2:**
+
+> "Let me show what replaced it. Twelve weeks of work on the POC, running live now. Eight probes against it in the next three minutes."
+
+Cut to Terminal 1. **Cut the ~30s Docker boot in post; splice from `docker compose up -d --build` to the "Container Started" line so viewers do not sit through dead air.**
 
 ---
 
@@ -131,6 +135,10 @@ Shows 65 tests passing with a coverage summary. `src/services/` should read at l
 
 > "Full test suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression fails the run."
 
+**Bridge into Beat 3:**
+
+> "That is the POC live. But the actual story is what shipped upstream in accordproject/apap over the twelve weeks. Let me pull that up."
+
 Transition: cut to browser.
 
 ---
@@ -185,6 +193,10 @@ Scroll to the RLS smoke test block (`set_config('app.user_id', ...)` against a `
 
 > "PG18 landed with a CI-enforced tenant-isolation smoke that walks the RLS boundary end to end. Non-superuser role cannot bypass. Runs on every push."
 
+**Bridge into Beat 4:**
+
+> "SDK 2.0, PG18, paged URIs, all of that shipped as code. A2A was different. It shipped as a design of record."
+
 ---
 
 ## Beat 4: A2A: a design, not a build (2:00)
@@ -208,6 +220,10 @@ Point at R1/R2:
 **Optional:** cut to blog `§07` pull-quote block:
 
 > "Auth is table stakes. The harder work sits above the adapter."
+
+**Bridge into Beat 5:**
+
+> "A2A is where the twelve weeks land. But the twelve weeks did not resolve everything."
 
 ---
 
