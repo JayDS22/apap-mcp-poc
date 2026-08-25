@@ -80,29 +80,49 @@ Inspector prints an auth-token URL to stdout, roughly `http://localhost:6274?MCP
 
 Save + Connect. The server appears in the servers list. Click it to open its Tools/Resources/Server-Info tabs.
 
-**Pre-record view:** Tools tab selected, so viewers see the 4 tools listed the instant the recording cuts to Inspector.
+**Inspector UI navigation cheat sheet** (Inspector 2.3 layout, so you don't have to hunt on camera):
+
+- The tabs (Tools, Resources, Prompts, Notifications, Server Info) live in a **left sidebar** on the connected-server view, or as a **top nav bar** depending on window width.
+- Click a tab, and the list of items for that category appears in the **main content area** to the right.
+- Each item in the list is clickable; clicking expands the item OR opens a detail view with parameter forms + Run/Call buttons.
+- For this demo, you're only clicking to show the LIST view for Tools and Resources. Only the schema resource gets clicked-into to render its content.
+
+**Pre-record view:** Connected server open, Tools tab selected so viewers see the 4 tools listed the instant the recording cuts to Inspector.
 
 Cut to the Inspector browser tab. Then walk three views in sequence:
 
 **Click 1: Tools tab (already visible from pre-record view) (~12s)**
 
-The 4 tools are listed: `getTemplate`, `getAgreement`, `convert-agreement-to-format`, `trigger-agreement`.
+The 4 tools are listed in the main content area, one per row:
+
+- `getTemplate`
+- `getAgreement`
+- `convert-agreement-to-format`
+- `trigger-agreement`
 
 > "OK quick visual anchor before the probes. This is MCP Inspector, the standard browser tool for MCP servers. Point it at the POC and here's what shows up. Tools tab first: four registered tools. Each one's a real function an AI agent can call."
 
-**Click 2: Resources tab (~12s)**
+**Click 2: Resources tab (sidebar or top nav, next to Tools) (~12s)**
 
-Five resources are listed: `apap://templates`, `apap://agreements`, `apap://templates/{templateId}`, `apap://agreements/{agreementId}`, `apap://schema/protocol.cto`.
+Five resources appear in the main content area:
+
+- `apap://templates`
+- `apap://agreements`
+- `apap://templates/{templateId}`
+- `apap://agreements/{agreementId}`
+- `apap://schema/protocol.cto`
 
 > "Resources tab: five entries. The two collections, two parameterized versions for single-item lookups, and this one, `apap://schema/protocol.cto`. That last one is the twelve-week refactor's key move."
 
-**Click 3: click the `apap://schema/protocol.cto` resource entry (~12s)**
+**Click 3: click the `apap://schema/protocol.cto` row (~12s)**
 
-The Concerto protocol model (~7200 characters of `.cto` schema) renders in the response viewer, starting with `@description("Accord Project Agreement Protocol")`.
+Clicking the row opens the resource detail view. The Concerto protocol model (~7200 characters of `.cto` schema) renders in the response viewer / preview pane, starting with `@description("Accord Project Agreement Protocol")`.
 
 > "Click into it and there's the Concerto protocol model rendered directly. About seven thousand characters of type definitions any AI can now read to interpret every response from this server. Same MCP surface, visual view. Now let me run the probes for the specifics."
 
 Cut back to the main terminal.
+
+**If the Inspector UI does not match** (Inspector 2.x has iterated on layout): the tabs/items you're looking for are always accessible from the connected-server view. If they're grouped under a single "Explorer" or "Overview" pane, scroll to find each section header (Tools, Resources) and the click sequence stays the same.
 
 ```bash
 ./demo-runner.sh
