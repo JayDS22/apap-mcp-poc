@@ -150,19 +150,15 @@ Opens with a scale visual in the terminal, then three ~60s sub-beats in the brow
 
 ### Scale visual (10s, at start of beat 3)
 
-Terminal (still the one from beat 2). Narrate while typing:
+Cut from terminal to browser. Open the pre-staged GitHub PR-filter tab that lists every merged upstream PR:
 
-> "Quick number first. Let me count what actually shipped."
+**Tab:** `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged`
 
-```bash
-gh pr list --repo accordproject/apap --author @me --state merged --limit 50 | wc -l
-```
+The page renders as a list of 28 rows, one per merged PR, with title, merge date, and green check. Scroll the list slowly while narrating:
 
-Expected output: `28`. Narrate as the number prints:
+> "Twenty-eight PRs merged into the upstream repo over the twelve weeks. Every one of these is public, self-verifying, and linked from the blog. Here's what they cover."
 
-> "Twenty-eight PRs into the upstream repo over the twelve weeks. Here's what they cover."
-
-Cut to browser.
+Then cut to the next tab (PR #227 for sub-beat 3a).
 
 ### 3a: MCP SDK 2.0 migration (60s)
 
@@ -262,17 +258,16 @@ Fade.
 - [ ] `curl http://localhost:9000/healthz` returns `{"status":"ok",...}`
 - [ ] `./demo-runner.sh` dry-run prints **`8/8 probes green - demo ready`**
 - [ ] `npm test 2>&1 | tail -10` prints all tests green with coverage summary
-- [ ] `gh pr list --repo accordproject/apap --author @me --state merged --limit 50 | wc -l` returns exactly `28`
-- [ ] `gh auth status` shows authenticated (needed for the scale-visual command on-camera)
 - [ ] Optional: seed a few extra templates via `POST /templates` before recording so PROBE 5 shows "3 records = 3 records" instead of "1 = 1"; punchier visual
 - [ ] Title-card slide ready for the first 20s of beat 1 (name, project, mentors) OR blog header pulled up in a browser tab as the intro screen
-- [ ] Six browser tabs pre-loaded and pinned in a private window (blocks notifications):
+- [ ] Seven browser tabs pre-loaded and pinned in a private window (blocks notifications):
   1. Pre-GSoC `mcp.ts` snippet or blog `§02`
-  2. PR **#227** diff (SDK 2.0)
-  3. Blog `§05` (A/B eval numbers)
-  4. `build.yml` RLS smoke section
-  5. Issue **#247** (A2A design of record)
-  6. Blog `§09` (open questions)
+  2. **Merged-PR filter** on `accordproject/apap`: `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged` (verify the page shows 28 rows before recording)
+  3. PR **#227** diff (SDK 2.0)
+  4. Blog `§05` (A/B eval numbers)
+  5. `build.yml` RLS smoke section
+  6. Issue **#247** (A2A design of record)
+  7. Blog `§09` (open questions)
 - [ ] macOS Do Not Disturb ON, Discord + Mail closed
 - [ ] Terminal font at least 16pt so text reads at 720p on YouTube
 - [ ] OBS Studio scene configured (see Recording setup below): Display Capture + Video Capture Device overlay + Audio Input Capture
