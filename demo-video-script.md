@@ -148,15 +148,15 @@ Transition: cut to browser.
 
 Opens with a scale visual in the terminal, then three ~60s sub-beats in the browser. Pre-stage 3 browser tabs.
 
-### Scale visual (10s, at start of beat 3)
+### Scale visual (15s, at start of beat 3)
 
-Cut from terminal to browser. Open the pre-staged GitHub PR-filter tab that lists every merged upstream PR:
+Cut from terminal to browser. Open the pre-staged blog tab scrolled to §08 (the proposal-vs-shipped roadmap):
 
-**Tab:** `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged`
+**Tab:** `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scrolled to §08 "Proposed vs shipped", Figure 5 CombinedRoadmap.png visible)
 
-The page renders as a list of 28 rows, one per merged PR, with title, merge date, and green check. Scroll the list slowly while narrating:
+The roadmap shows a colored calendar: top lane in blue for what was scoped in the May proposal, bottom lanes in green for what shipped as code, amber for design of record (A2A sidecar), grey for deferred (subscriptions on SDK 2.0 native). Pan across the image slowly while narrating:
 
-> "Twenty-eight PRs merged into the upstream repo over the twelve weeks. Every one of these is public, self-verifying, and linked from the blog. Here's what they cover."
+> "Twelve weeks, twenty-eight PRs merged upstream. Here's what they covered: top lane is what the May proposal scoped, bottom lanes are what actually ran. Green shipped as code, amber shipped as design of record, grey deferred to post-GSoC. Not everything landed as planned, but nothing hidden either."
 
 Then cut to the next tab (PR #227 for sub-beat 3a).
 
@@ -198,25 +198,29 @@ Scroll to the RLS smoke test block (`set_config('app.user_id', ...)` against a `
 
 ## Beat 4: A2A: a design, not a build (2:00)
 
-**Tab:** `https://github.com/accordproject/apap/issues/247`
+**Tab:** `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scrolled to §07 "A2A: a design, not a build", Figure 4 A2ASidecarArchitecture.png visible)
 
-Scroll top-level TL;DR -> sidecar figure (Figure 4 in the blog) -> R1/R2 rejection reasoning.
+Scroll through the §07 section: opening paragraphs -> Figure 4 sidecar diagram -> R1/R2 rejection reasoning -> pull-quote block.
 
-**Narration:**
+**Narration on the opening paragraphs:**
 
 > "A2A was scoped to a design-of-record deliverable for this cycle, not an implementation slice. The failure modes worth caring about live in the design, not the code."
 
-Point at sidecar diagram:
+**Point at sidecar diagram (Figure 4):**
 
 > "Dedicated `POST /a2a` alongside `POST /mcp` on the same Express process. Shared service layer beneath both. Auth adapter on the A2A route only, MCP and REST stay open by design."
 
-Point at R1/R2:
+**Point at R1/R2 rejection block:**
 
 > "Two alternatives evaluated and rejected. R1 registered A2A skills as MCP tools, which fails the wire spec. R2 multiplexed both protocols on `/mcp`, which neither SDK supports. Sidecar is the choice with reasons, not a menu."
 
-**Optional:** cut to blog `§07` pull-quote block:
+**Scroll to the "Auth is table stakes" pull-quote block:**
 
 > "Auth is table stakes. The harder work sits above the adapter."
+
+**On-camera reference to full design of record:**
+
+> "Full analysis with all the alternatives and the mentor review trail lives at issue 247 on the upstream repo, link in the video description."
 
 **Bridge into Beat 5:**
 
@@ -261,15 +265,20 @@ Fade.
 - [ ] Optional: seed a few extra templates via `POST /templates` before recording so PROBE 5 shows "3 records = 3 records" instead of "1 = 1"; punchier visual
 - [ ] Title-card slide ready for the first 20s of beat 1 (name, project, mentors) OR blog header pulled up in a browser tab as the intro screen
 - [ ] Seven browser tabs pre-loaded and pinned in a private window (blocks notifications). Blog tabs point at the AP WordPress publication, not the GitHub markdown, so viewers landing from the video description see the same URL that was submitted to Google.
-  1. **Blog on AP WordPress, scrolled to §02** (pre-GSoC HTTP loop): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "MCP surface was calling itself over HTTP" section pre-recording so it's already in view)
-  2. **Merged-PR filter** on `accordproject/apap`: `https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged` (verify the page shows 28 rows before recording)
+  1. **Blog scrolled to §02** (pre-GSoC HTTP loop): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/`
+  2. **Blog scrolled to §08 roadmap** (scale visual, Figure 5 CombinedRoadmap.png): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/`
   3. PR **#227** diff (SDK 2.0): `https://github.com/accordproject/apap/pull/227/files`
-  4. **Blog on AP WordPress, scrolled to §05** (A/B eval numbers): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "Three surfaces, same six operations" section showing Figure 3 and the +20pp / +38pp table)
+  4. **Blog scrolled to §05** (A/B eval, Figure 3 + +20/+38pp table): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/`
   5. `build.yml` RLS smoke section: `https://github.com/accordproject/apap/blob/main/.github/workflows/build.yml`
-  6. Issue **#247** (A2A design of record): `https://github.com/accordproject/apap/issues/247`
-  7. **Blog on AP WordPress, scrolled to §09** (open questions): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/` (scroll to the "Two things did not ship, on purpose" section and the three open questions block)
+  6. **Blog scrolled to §07** (A2A design, Figure 4 A2ASidecarArchitecture.png + R1/R2 + pull-quote): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/`
+  7. **Blog scrolled to §09** (open questions): `https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/`
 
-Note on the three blog tabs (1, 4, 7): they all point at the same AP URL. Open the URL three times in three separate tabs and scroll each one to the right section before recording, so on-camera you switch tabs cleanly rather than scrolling the same page live. If WordPress heading anchors are stable, you can also append fragment identifiers like `#02-...` to each tab URL so each tab lands at the right section on load; verify before recording.
+Note on the five blog tabs (1, 2, 4, 6, 7): they all point at the same AP URL. Two setup options:
+
+- **Option A (recommended):** Open the URL five times in five separate tabs and pre-scroll each one to the right section before recording, so on-camera you switch tabs cleanly rather than scrolling the same page live. Verify pre-scroll positions after any browser refresh.
+- **Option B (simpler setup, less polished on camera):** Open the URL once and scroll to each section live as the beat requires. Feasible if you're comfortable scrolling smoothly on camera.
+
+If WordPress heading anchors are stable, you can also append fragment identifiers per tab so each tab lands at the right section on load; verify before recording.
 - [ ] macOS Do Not Disturb ON, Discord + Mail closed
 - [ ] Terminal font at least 16pt so text reads at 720p on YouTube
 - [ ] OBS Studio scene configured (see Recording setup below): Display Capture + Video Capture Device overlay + Audio Input Capture
