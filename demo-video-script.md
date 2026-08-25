@@ -64,15 +64,21 @@ curl -s http://localhost:9000/healthz
 
 ### MCP Inspector visual anchor (~30s, before running probes)
 
-Before the terminal probes fire, quick browser-based view of what the server exposes. In a second terminal, launch MCP Inspector:
+Before the terminal probes fire, quick browser-based view of what the server exposes. In a second terminal, launch MCP Inspector bare (Inspector 2.x moved connection config into the UI; do NOT pass transport or URL flags on the command line):
 
 ```bash
-npx @modelcontextprotocol/inspector --transport streamable-http --url http://localhost:9000/mcp
+npx @modelcontextprotocol/inspector
 ```
 
-Inspector opens at `http://localhost:6274/`. Cut to that browser tab.
+Inspector prints an auth-token URL to stdout, roughly `http://localhost:6274?MCP_PROXY_AUTH_TOKEN=<token>`. Open that URL in the browser. In the Inspector UI:
 
-Narrate while showing the Tools tab, Resources tab, and server-info panel:
+1. Transport Type dropdown: select `Streamable HTTP`
+2. URL field: paste `http://localhost:9000/mcp`
+3. Click Connect
+
+The Tools, Resources, and Server Info tabs populate once connected. Pre-launch and pre-connect before rolling tape so the recording just cuts to the ready state.
+
+Cut to the Inspector browser tab and narrate while showing the Tools tab, Resources tab, and server-info panel:
 
 > "Quick visual anchor before the probes. MCP Inspector is the standard browser tool for MCP servers. Point it at the POC and here's what shows up: four tools on the left, five resources on the right, and the typed-context instructions string under server info. Same surface, visual view. Now let me run the probes in the terminal for the specifics."
 
