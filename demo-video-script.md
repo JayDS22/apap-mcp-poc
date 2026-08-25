@@ -172,7 +172,7 @@ Cut from terminal to browser. Open the pre-staged blog tab scrolled to §08 (the
 
 The roadmap shows a colored calendar: top lane in blue for what was scoped in the May proposal, bottom lanes in green for what shipped as code, amber for design of record (A2A sidecar), grey for deferred (subscriptions on SDK 2.0 native). Pan across the image slowly while narrating:
 
-> "Twelve weeks, twenty-eight PRs merged upstream. Top lane is what the May proposal scoped; bottom lanes are what actually ran. Every proposal deliverable landed, plus five emergent workstreams on top of it. Green shipped as code, amber shipped as design of record, grey is one deferred item that carries into a follow-up branch post-GSoC. Nothing hidden, nothing undersold."
+> "Twelve weeks, twenty-eight PRs merged upstream. Top lane is what the May proposal scoped, and its core wrapped by around week eight. That freed the back half of the cycle for what shipped on top: MCP SDK 2.0 landed mid-cycle, Postgres 18 with an RLS smoke, paged MCP resource URIs, a typed-context A/B evaluation, and A2A as design of record. Green is shipped code, amber is design, grey is one deferred item that carries into a follow-up branch. Roadmap evolved as the ecosystem moved; the plan absorbed the moving parts."
 
 Then a quick 8-10s cut to the merged-PR filter tab as verification anchor:
 
