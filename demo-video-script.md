@@ -30,7 +30,7 @@ const response = await makeApiRequest('http://localhost:9000/templates');
 
 > "Let me show what replaced it. Twelve weeks of work on the POC, running live now. Eight probes against it in the next three minutes."
 
-Cut to Terminal 1. **Cut the ~30s Docker boot in post; splice from `docker compose up -d --build` to the "Container Started" line so viewers do not sit through dead air.**
+Cut to Terminal 1. See the pre-stage command narrations in Beat 2 below.
 
 ---
 
@@ -38,15 +38,34 @@ Cut to Terminal 1. **Cut the ~30s Docker boot in post; splice from `docker compo
 
 **Screen:** Terminal 1 (iTerm2, 16pt+ font, black background).
 
-Pre-stage commands (run in this order):
+Pre-stage commands (run in this order). Do not type these in silence; each command gets a brief one-line narration while you type it, so the camera hears a human voice throughout, not just keyboard clacks.
 
 ```bash
 cd ~/Documents/Github_Personal/GSoC-Accord/apap-mcp-poc
-docker compose down
-docker compose up -d --build       # ~30s to boot
-curl -s http://localhost:9000/healthz    # expect {"status":"ok",...}
-./demo-runner.sh                         # runs 8 probes with paced output
 ```
+> "Repo root. This is the POC I built for this project. Public on GitHub if you want to clone and run this after the video."
+
+```bash
+docker compose down
+```
+> "Clean slate first. Tear down anything left from an earlier run."
+
+```bash
+docker compose up -d --build
+```
+> "Bring it up fresh. Postgres, the Express server, and the MCP transport, all in one Compose stack."
+
+**Cut the ~30s Docker boot in post-production.** Splice from the `docker compose up` command straight to the "Container Started" line so viewers do not sit through dead air.
+
+```bash
+curl -s http://localhost:9000/healthz
+```
+> "Confirm it's up. Health check returns ok, so we're good to run the probes."
+
+```bash
+./demo-runner.sh
+```
+> "This runs eight probes end to end against the MCP surface. Each probe answers one question about what the twelve-week refactor actually did. Watching each one in turn."
 
 **What each probe demonstrates:**
 
@@ -105,17 +124,17 @@ Bottom line must read: **`8/8 probes green - demo ready`**
 
 ### Test suite proof (~20s, at end of beat 2)
 
-Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims:
+Right after `8/8 probes green`, run the full test suite to prove the safety net the blog claims. Narrate while typing:
+
+> "Eight probes was the demo. The safety net that keeps this from regressing is the test suite. Let me run it."
 
 ```bash
 npm test 2>&1 | tail -10
 ```
 
-Shows 65 tests passing with a coverage summary. `src/services/` should read at least `97%` statement coverage.
+Test suite takes ~10-15 seconds. Narrate WHILE it runs:
 
-**Narration:**
-
-> "Full test suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression fails the run."
+> "Full suite: 65 tests, service layer at 98.55% statement coverage, thresholds enforced in vitest. Any regression fails the run."
 
 **Bridge into Beat 3:**
 
@@ -131,15 +150,15 @@ Opens with a scale visual in the terminal, then three ~60s sub-beats in the brow
 
 ### Scale visual (10s, at start of beat 3)
 
-Terminal (still the one from beat 2):
+Terminal (still the one from beat 2). Narrate while typing:
+
+> "Quick number first. Let me count what actually shipped."
 
 ```bash
 gh pr list --repo accordproject/apap --author @me --state merged --limit 50 | wc -l
 ```
 
-Expected output: `28`
-
-**Narration:**
+Expected output: `28`. Narrate as the number prints:
 
 > "Twenty-eight PRs into the upstream repo over the twelve weeks. Here's what they cover."
 
