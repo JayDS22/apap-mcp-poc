@@ -14,7 +14,7 @@ This is a working proof-of-concept for the core architectural change proposed in
 This POC was the seed for the GSoC 2026 cycle contributing to `accordproject/apap`. Twelve weeks of upstream work landed the shared service layer, typed `ServiceError` hierarchy, MCP SDK 2.0 migration, PG18 support with RLS smoke test, paged MCP resource URIs, and the design of record for the A2A wrapper.
 
 - **Blog write-up (Accord Project):** [GSoC 2026: Rewiring APAP for Agents](https://accordproject.org/news/gsoc-2026-rewiring-apap-for-agents/)
-- **Final GSoC demo video (August 2026):** *(YouTube URL on upload)*
+- **Final GSoC demo video (August 2026):** [YouTube walkthrough](https://www.youtube.com/watch?v=YUood09jjFs)
 - **28 merged upstream PRs:** [`accordproject/apap` (author:JayDS22, merged)](https://github.com/accordproject/apap/pulls?q=is%3Apr+author%3AJayDS22+is%3Amerged)
 - **A2A wrapper — design of record:** [issue #247](https://github.com/accordproject/apap/issues/247)
 - **Typed-context A/B evaluation harness:** [PR #3](https://github.com/JayDS22/apap-mcp-poc/pull/3) (source of the +20pp Claude Sonnet 4.6 / +38pp GPT-4o lift numbers)
@@ -32,7 +32,7 @@ POC main now carries the typed-context resource (`apap://schema/protocol.cto` + 
 
 [![Original Proposal Demo](images/gsoc-2026-thumbnail.png)](https://www.youtube.com/watch?v=KFwc5IRuKUc)
 
-**Final GSoC demo (August 2026)** — end-to-end walkthrough of what shipped upstream over the 12-week cycle: *(link on publish)*
+**Final GSoC demo (August 2026)** — end-to-end walkthrough of what shipped upstream over the 12-week cycle: [YouTube](https://www.youtube.com/watch?v=YUood09jjFs)
 
 ---
 
