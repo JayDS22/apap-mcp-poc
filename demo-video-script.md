@@ -178,7 +178,7 @@ Cut back to the main terminal.
 
 ### When `8/8 probes green - demo ready` prints
 
-> "End to end: typed context in, structured errors out, one shared service layer under both REST and MCP, real-time notifications, cache hints, clean boundary. Same architecture upstream now across twenty-eight merged PRs. That's the twelve-week arc."
+> "So that's the demo. Same server, same code, whether it's a plain HTTP client or an AI agent going through MCP. Consistent contract for both. And the same architecture is running upstream now across twenty-eight merged PRs. Twelve weeks."
 
 Bottom line must read: **`8/8 probes green - demo ready`**
 
@@ -218,7 +218,7 @@ Cut from terminal to browser. Open the pre-staged blog tab scrolled to §08 (the
 
 The roadmap shows a colored calendar: top lane in blue for what was scoped in the May proposal, bottom lanes in green for what shipped as code, amber for design of record (A2A sidecar), grey for deferred (subscriptions on SDK 2.0 native). Pan across the image slowly while narrating:
 
-> "Twelve weeks, twenty-eight PRs merged upstream. Top lane is what the May proposal scoped, and its core wrapped by around week eight. That freed the back half of the cycle for what shipped on top: MCP SDK 2.0 landed mid-cycle, Postgres 18 with an RLS smoke, paged MCP resource URIs, a typed-context A/B evaluation, and A2A as design of record. Green is shipped code, amber is design, grey is one deferred item that carries into a follow-up branch. Roadmap evolved as the ecosystem moved; the plan absorbed the moving parts."
+> "Twelve weeks, twenty-eight PRs merged upstream. Top lane here is what the May proposal scoped. That core wrapped around week eight, so the back half of the cycle was free to absorb everything the ecosystem sent our way. MCP SDK 2.0 landed mid-cycle. Postgres 18. Paged MCP URIs. The typed-context A/B eval. And A2A as design of record. Green pills shipped as code, amber is design, grey is one deferred item."
 
 Then a quick 8-10s cut to the merged-PR filter tab as verification anchor:
 
