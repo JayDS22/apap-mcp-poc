@@ -178,7 +178,7 @@ Cut back to the main terminal.
 
 ### When `8/8 probes green - demo ready` prints
 
-> "So that's the demo. Same server, same code, whether it's a plain HTTP client or an AI agent going through MCP. Consistent contract for both. And the same architecture is running upstream now across twenty-eight merged PRs. Twelve weeks."
+> "So that's the demo. Same server, same code, whether the caller is a plain HTTP client or an AI agent going through MCP. Same contract on both sides. And this exact architecture is running upstream now across twenty-eight merged PRs. Twelve weeks."
 
 Bottom line must read: **`8/8 probes green - demo ready`**
 
@@ -218,7 +218,7 @@ Cut from terminal to browser. Open the pre-staged blog tab scrolled to §08 (the
 
 The roadmap shows a colored calendar: top lane in blue for what was scoped in the May proposal, bottom lanes in green for what shipped as code, amber for design of record (A2A sidecar), grey for deferred (subscriptions on SDK 2.0 native). Pan across the image slowly while narrating:
 
-> "Twelve weeks, twenty-eight PRs merged upstream. Top lane here is what the May proposal scoped. That core wrapped around week eight, so the back half of the cycle was free to absorb everything the ecosystem sent our way. MCP SDK 2.0 landed mid-cycle. Postgres 18. Paged MCP URIs. The typed-context A/B eval. And A2A as design of record. Green pills shipped as code, amber is design, grey is one deferred item."
+> "Twelve weeks, twenty-eight PRs merged upstream. Top lane here is what the May proposal originally scoped. And that core work basically wrapped by around week eight, which meant the back half of the cycle was free to absorb everything else the ecosystem sent our way. So MCP SDK 2.0 landed mid-cycle. Postgres 18. Paged MCP URIs. The typed-context A/B eval. A2A as design of record. Green pills shipped as code, amber is design, grey is the one deferred item."
 
 Then a quick 8-10s cut to the merged-PR filter tab as verification anchor:
 
@@ -238,7 +238,7 @@ Scroll the `package.json` split (`@modelcontextprotocol/sdk` -> `@modelcontextpr
 
 **Narration:**
 
-> "One atomic PR, one review, one rollback point. Split-package rewrite plus the tool-registration port plus SSE-to-Streamable-HTTP transition in a single diff. Tests stayed green throughout."
+> "So here's the SDK 2.0 migration. Split-package rewrite, tool registrations ported, SSE dropped for Streamable HTTP. All in one PR, one review. Tests stayed green the whole way through."
 
 ### 3b: typed-context A/B eval (60s)
 
@@ -248,7 +248,7 @@ Alternative tab: `https://github.com/JayDS22/apap-mcp-poc/pull/3` for the harnes
 
 **Narration:**
 
-> "Three-arm bench. Arm 1 baseline is JSON schema only. Arm 2 adds typed context via `InitializeResult.instructions`. Two frontier models, same server, same prompts. Both moved in the same direction. Typed context is not cosmetic."
+> "Next up, the typed-context A/B eval. Three-arm bench. Baseline arm has just the JSON schema. Second arm adds the typed-context hint on top. Same server, same prompts, run against Sonnet 4.6 and GPT-4o. Both jumped. So the typed context isn't just nice-to-have, it actually moves the needle."
 
 ### 3c: PG18 + RLS smoke (60s)
 
@@ -258,11 +258,11 @@ Scroll to the RLS smoke test block (`set_config('app.user_id', ...)` against a `
 
 **Narration:**
 
-> "PG18 landed with a CI-enforced tenant-isolation smoke that walks the RLS boundary end to end. Non-superuser role cannot bypass. Runs on every push."
+> "And PG18. Came with a smoke test that runs on every push. A non-superuser role tries to bypass row-level security, gets rejected. Tenant isolation checked end to end in CI."
 
 **Bridge into Beat 4:**
 
-> "SDK 2.0, PG18, paged URIs, all of that shipped as code. A2A was different. It shipped as a design of record."
+> "So that's SDK 2.0, PG18, paged URIs, all shipped as code. A2A was different though. That one shipped as a design, not a build."
 
 ---
 
@@ -274,15 +274,15 @@ Scroll to Figure 4 (A2ASidecarArchitecture.png) so it's in view. Keep it visual 
 
 **Opening + sidecar diagram (Figure 4), ~15s:**
 
-> "A2A was scoped as a design-of-record this cycle, not an implementation slice. The design is a sidecar: dedicated `POST /a2a` route alongside `POST /mcp`, sharing the same service layer beneath. Auth adapter on the A2A route only; MCP and REST stay open by design."
+> "A2A was scoped as design-of-record this cycle, not implementation. And the design is a sidecar. So you have a dedicated `/a2a` route sitting right alongside `/mcp`, and both call into the same service layer underneath. Auth adapter only lives on the A2A side. MCP and REST stay open by design."
 
 **High-level close + pointer to the depth, ~10s:**
 
-> "The full walkthrough with the alternatives that were rejected, the auth-boundary reasoning, and the mentor review trail is in section 7 of the blog and at issue 247 on the upstream repo. Both linked in the description."
+> "The full write-up is in section seven of the blog and at issue 247 upstream. That has the alternatives that got rejected, the auth-boundary reasoning, all the mentor back-and-forth. Both linked below."
 
 **Bridge into Beat 5:**
 
-> "A2A is where the twelve weeks land. But the twelve weeks did not resolve everything."
+> "So that's where the twelve weeks land. But not everything got resolved."
 
 ---
 
@@ -298,17 +298,17 @@ Scroll and read:
 
 **Narration:**
 
-> "These are the questions this GSoC cycle did not resolve. The next contributor who does shapes the pattern the ecosystem picks up."
+> "Three questions this cycle didn't answer. Whoever picks them up shapes the pattern the ecosystem lands on."
 
 **Just before closing shot, narration (~10s):**
 
-> "Twelve weeks of review and architectural sparring from Niall Roche and Dan Selman shaped every decision. Full acknowledgments in the blog."
+> "Twelve weeks of review and architectural sparring from Niall Roche and Dan Selman. Full thanks in the blog."
 
 **Closing shot:** blog header (icons + title).
 
 **Narration:**
 
-> "Blog, repo, and the design of record are all linked. Twelve weeks, contributed to Accord Project, hosted by the Linux Foundation."
+> "Blog, repo, design of record, all linked below. Twelve weeks, contributed to Accord Project, hosted by the Linux Foundation."
 
 Fade.
 
