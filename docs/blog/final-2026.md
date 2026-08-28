@@ -16,7 +16,7 @@ window: June 2 to August 25, 2026 (12 weeks)
 
 # Rewiring APAP for Agents: MCP, A2A, and a Shared Service Layer
 
-*The end-to-end walkthrough: what the seam between an LLM agent and a contract protocol has to look like when agents are the primary caller. Twelve weeks, six workstreams, 28 upstream merges on `accordproject/apap`.*
+*Twelve weeks contributing to the Accord Project: 28 upstream PRs to `accordproject/apap`, a shared service layer, an A2A design of record, and a first-pass typed-context evaluation.*
 
 > **TL;DR.** <strong style="color: #1565c0;">28 PRs</strong> into `accordproject/apap` <strong style="color: #2e7d32;">removed the MCP handler's internal HTTP loop</strong>, <strong style="color: #2e7d32;">unified REST + MCP under a shared service layer with typed errors</strong>, <strong style="color: #2e7d32;">migrated the RI to MCP SDK 2.0 in a single reviewable PR</strong>, and ratified a sidecar architecture for A2A as <strong style="color: #ef6c00;">design-of-record</strong>. Typed context lifts frontier-model agent performance by <strong style="color: #2e7d32;">+20pp on Claude Sonnet 4.6</strong> and <strong style="color: #2e7d32;">+38pp on GPT-4o</strong> in a first-pass three-arm A/B (rerun pending).
 
@@ -24,7 +24,7 @@ window: June 2 to August 25, 2026 (12 weeks)
 
 ## Contents
 
-- `01`: The seam is load-bearing
+- `01`: Why hardening APAP mattered
 - `02`: The MCP surface was calling itself over HTTP
 - `03`: Errors that agents can act on
 - `04`: One source of truth, no localhost round-trip
@@ -87,14 +87,14 @@ A2A is the emerging agent-to-agent protocol for cross-server orchestration; more
 
 ## `02`: The MCP surface was calling itself over HTTP
 
-Two transports live on the same Express process: REST for humans and CI, MCP for agents. The pre-GSoC MCP path had a structural problem: the MCP tool handlers called back into the REST app over HTTP.
+To ground that first problem in code, here is what the pre-GSoC MCP handler for `templates.list` actually looked like. Most of it was HTTP request and response marshaling for a call to another route on the same server:
 
 ```typescript
 // pre-GSoC: handlers/mcp.ts
 const response = await makeApiRequest('http://localhost:9000/templates');
 ```
 
-Same process, same request lifetime, but every MCP call paid a serialization tax, went through the routing middleware twice, and had business logic duplicated between the handler and the route it was calling.
+Same process, same request lifetime, but every MCP call added a full serialization round-trip, ran the routing middleware twice, and duplicated business logic between the handler and the route it was calling.
 
 <figure style="margin: 1.5em 0;">
   <img src="diagrams/InitialArch.png" alt="Figure 1. Initial architecture" style="width: 100%; max-width: 1400px; display: block; margin: 0 auto;">
@@ -115,9 +115,9 @@ This post follows those threads.
 
 ## `03`: Errors that agents can act on
 
-The pre-GSoC RI threw bare `Error("template not found")` strings from handlers. Express mapped everything to `500`. An agent could not distinguish a missing record, a validation failure, a duplicate primary key, or a database outage.
+Back to the first of the three problems: bare-string errors. The pre-GSoC Reference Implementation threw plain `Error("template not found")` strings from handlers, and Express mapped everything to `500`. An agent staring at that response had no way to tell a missing record from a validation failure from a duplicate primary key from a database outage.
 
-The fix: a typed `ServiceError` hierarchy in the shared service layer. Each subclass carries:
+The fix was a typed `ServiceError` hierarchy in the shared service layer. Each subclass carries:
 
 - A machine-readable code (`NOT_FOUND`, `VALIDATION_FAILED`, `CONFLICT`)
 - An appropriate HTTP status (`404`, `422`, `409`)
@@ -135,13 +135,13 @@ throw new NotFoundError('template', id);
 
 The MCP handler and the REST router each own a small catch block that maps `ServiceError` to a protocol-appropriate response. Anything that is *not* a `ServiceError` is a real 500 and pages someone.
 
-For a contract protocol, this is not only a developer-ergonomics win. Typed errors are audit-trail primitives. `TEMPLATE_NOT_FOUND` on an agreement instantiation, `AGREEMENT_CONVERSION_FAILED` on a state transition, and `VALIDATION_FAILED` on a Concerto-typed payload are distinguishable events in a log a dispute-resolution process can read. Opaque 500s are not.
+For a contract protocol, this matters beyond developer ergonomics. When the same error codes show up in an audit log, a `TEMPLATE_NOT_FOUND` on an agreement instantiation, an `AGREEMENT_CONVERSION_FAILED` on a state transition, and a `VALIDATION_FAILED` on a Concerto-typed payload are all distinguishable events. A dispute-resolution process can read them. Opaque 500s cannot be read that way.
 
 ---
 
 ## `04`: One source of truth, no localhost round-trip
 
-The service-layer refactor is the biggest change of the cycle. Business logic moved into `src/services/`, keyed on the DB rather than on Express.
+The service-layer refactor was the biggest change of the cycle, and it addressed the second of the three problems. Business logic moved out of the HTTP handlers and into `src/services/`, where every function takes the database as its first argument and knows nothing about Express or the MCP SDK.
 
 The rules the refactor enforces:
 
@@ -164,11 +164,11 @@ export async function getTemplateById(
 }
 ```
 
-The MCP tool handler and the REST route both call `getTemplateById(db, id)` directly. Neither speaks HTTP to the other. `TemplateNotFoundError` is a `ServiceError` subclass that carries the code `TEMPLATE_NOT_FOUND`, HTTP status `404`, and a structured `identifier` field in its details. The REST router catches it and returns `404 { error: { code, message, details } }`. The MCP handler catches the same class and emits a JSON-RPC error carrying the same code and structured details. One throw, two protocol-appropriate responses.
+The MCP tool handler and the REST route both call `getTemplateById(db, id)` directly. Neither speaks HTTP to the other. `TemplateNotFoundError` is a `ServiceError` subclass that carries the code `TEMPLATE_NOT_FOUND`, HTTP status `404`, and a structured `identifier` field in its details. The REST router catches it and returns `404 { error: { code, message, details } }`. The MCP handler catches the same class and emits a JSON-RPC error with the same code and details. The service throws once; each transport shapes its own response.
 
-Successful responses carry the same shared context. Every row round-trips its Concerto `$class` discriminator intact, and MCP resource URIs (`apap://templates/{id}`, `apap://agreements/{id}`) give an agent a stable citation back to the source object. Grounding an answer back to the template it came from is a URI lookup, not a full-text search.
+Successful responses carry the same shared context. Every row round-trips its Concerto `$class` discriminator intact, and MCP resource URIs (`apap://templates/{id}`, `apap://agreements/{id}`) give an agent a stable citation back to the source object. When an agent needs to point at "the template this answer came from," it can do a URI lookup instead of a full-text search.
 
-Landed as five upstream slices across the middle of the cycle. Each slice ported one entity family (templates, agreements, sharedModels, capabilities, health). The final slice removed the last `makeApiRequest` callsite. An `import express from 'express'` in a service file gets caught in review; the refactor is defeated the moment a transport dependency leaks in.
+The change landed as five upstream slices across the middle of the cycle. Each slice ported one entity family (templates, agreements, shared models, capabilities, health), and the final slice removed the last `makeApiRequest` call site. Anyone who tries to add `import express from 'express'` to a service file gets caught in code review.
 
 <figure style="margin: 1.5em 0;">
   <img src="diagrams/TargetArch.png" alt="Figure 2. Target architecture" style="width: 100%; max-width: 1400px; display: block; margin: 0 auto;">
@@ -179,7 +179,7 @@ Landed as five upstream slices across the middle of the cycle. Each slice ported
 
 The safety net that keeps the boundary honest: 53 tests in the POC (44 unit, 9 integration) hit `98.55%` statement, `92.3%` branch, and `100%` function coverage against `src/services/`. Coverage thresholds fail the `vitest` run on regression. Upstream `apap/server` carries 10 jest suites (200 assertions) covering REST handlers, MCP handlers, and the service layer end-to-end.
 
-Once the layer existed, the surfaces stacked on top of it stopped needing to know about each other.
+Once the shared layer existed, REST and MCP stopped needing to know about each other.
 
 ---
 
@@ -195,7 +195,7 @@ APAP targets three surfaces for the same six template + agreement operations (te
 
 A `templates.list` request over REST (`GET /templates`), over MCP (`tools/call` on `templates.list`), or over A2A once the endpoint ships (`POST /a2a` with `skill.templates.list`) each traces back to the same `listTemplates(db)` call. The response envelope differs; the row set does not.
 
-So does any of this actually help the model, or is it only easier on the server author? A typed-context A/B evaluation ran alongside the refactor to answer that. The harness is a three-arm bench.
+A fair question at this point is whether any of this actually helps the model, or whether it just makes life easier for the server author. To answer it, a typed-context evaluation ran alongside the refactor. Three conditions, two frontier models.
 
 <figure style="margin: 1.5em 0;">
   <img src="diagrams/headroom-eval.png" alt="Figure 3. Three-arm headroom bench" style="width: 100%; max-width: 1400px; display: block; margin: 0 auto;">
@@ -211,9 +211,9 @@ Arm 2 minus Arm 1 isolates the lift from typed context alone. Arm 3 minus Arm 2 
 | Claude Sonnet 4.6 | baseline | **+20pp** | typed context alone |
 | GPT-4o | baseline | **+38pp** | typed context alone |
 
-Two different frontier models, same server, same prompts, same evaluation rubric. Both moved in the same direction. Both moved by more than the noise floor of the first-pass run. A statistically defensible rerun with confidence intervals and pre-registered arms is in progress; the honest reading of first-pass numbers is that typed context helps and helps more for the model with the weaker prior over the domain. Harness and rerun methodology live at [`JayDS22/apap-mcp-poc#3`](https://github.com/JayDS22/apap-mcp-poc/pull/3); [#199](https://github.com/accordproject/apap/pull/199) tracks the upstream version.
+Same server, same prompts, same evaluation rubric. Both models moved in the same direction and by more than the noise floor of the first-pass run. A statistically defensible rerun with confidence intervals and pre-registered arms is in progress. The honest reading of these first-pass numbers is that typed context helps, and helps more for the model with a weaker prior over the domain. The harness and rerun methodology live at [`JayDS22/apap-mcp-poc#3`](https://github.com/JayDS22/apap-mcp-poc/pull/3); [#199](https://github.com/accordproject/apap/pull/199) tracks the upstream version.
 
-The takeaway is unchanged and load-bearing for the rest of the cycle: typed errors and typed context are not cosmetic. They move the needle on downstream agent behaviour, and the size of the effect is model-dependent.
+The takeaway matters for the rest of the cycle: typed errors and typed context are not cosmetic. They change agent behaviour in measurable ways, and the size of the change depends on the model.
 
 ---
 
@@ -221,15 +221,11 @@ The takeaway is unchanged and load-bearing for the rest of the cycle: typed erro
 
 The MCP SDK cut its 2.0 line during this cycle. It is a split-package rewrite, not a semver bump. Packages moved to `@modelcontextprotocol/{core,server,express,node,client}`. SSE was dropped in favour of `NodeStreamableHTTPServerTransport`. `McpError` became a `ProtocolError` hierarchy. Tool registration moved from `.tool()` to `.registerTool()`.
 
-Migration landed as [#227](https://github.com/accordproject/apap/pull/227): the full package swap, tool-registration port, and SSE-to-`NodeStreamableHTTPServerTransport` transition in one atomic diff. One PR, one review, one rollback point. Tests stayed green throughout.
+Migration landed as [#227](https://github.com/accordproject/apap/pull/227): the full package swap, tool-registration port, and SSE-to-Streamable-HTTP transition in one reviewable PR. One review, one rollback point. Tests stayed green throughout.
 
-The diff was clean; the merge was not. #227 shipped with a stray `undefined@0.1.0` in `server/package.json` (a junk package from a bad `npm install`) and a coverage-config regression that Niall caught after merge. [#231](https://github.com/accordproject/apap/pull/231) was the follow-up that fixed both, and [#245](https://github.com/accordproject/apap/pull/245) later restored the same dep pins after a rebase silently dropped them. The right time to catch these is before merge. The second-right time is a cleanup PR the same week.
+Not everything was clean. #227 shipped with a stray `undefined@0.1.0` in `server/package.json` (a junk package from a bad `npm install`) and a coverage-config regression that Niall caught after merge. [#231](https://github.com/accordproject/apap/pull/231) was the follow-up that fixed both, and [#245](https://github.com/accordproject/apap/pull/245) later restored the same dep pins after a subsequent rebase silently dropped them. Ideally both would have been caught before merge; when they aren't, the fix belongs in a cleanup PR the same week rather than being deferred.
 
-<blockquote style="border-left: 4px solid #2e7d32; padding: 0.6em 1.2em; margin: 1.5em 0; font-size: 1.2em; font-style: italic; color: #1a1a1a; background: #f5faf5;">
-"The diff was clean; the merge was not."
-</blockquote>
-
-For integrators: any MCP client on the pre-2.0 line needs to update its import paths (`@modelcontextprotocol/sdk` -> `@modelcontextprotocol/{core,server,express,node,client}`), swap `.tool()` for `.registerTool()`, and replace `McpError` handling with the new `ProtocolError` hierarchy. SSE clients need to move to Streamable HTTP.
+For integrators: any MCP client on the pre-2.0 line needs to update its import paths (`@modelcontextprotocol/sdk` to `@modelcontextprotocol/{core,server,express,node,client}`), swap `.tool()` for `.registerTool()`, and replace `McpError` handling with the new `ProtocolError` hierarchy. SSE clients need to move to Streamable HTTP.
 
 Paged resource URIs followed in [#243](https://github.com/accordproject/apap/pull/243) using RFC 6570 form-style expansion (`apap://templates{?limit,offset}` and `apap://agreements{?limit,offset}`). Bare URIs stay registered statically for backwards compatibility, defaulting to page 1. Stable `orderBy(asc(id))` on the un-paged variants prevents row repetition between pages.
 
@@ -243,9 +239,7 @@ Alongside the SDK migration:
 
 ## `07`: A2A: a design, not a build
 
-A2A was scoped to a design-of-record deliverable for this GSoC cycle, not an implementation slice. By week 11 it was clear why: the failure modes worth caring about live in the design (auth boundary, discovery semantics, transport composition), not the code. Week 12 went to the design; sidecar was ratified 2026-08-18 by Dan and Niall. Implementation is a follow-on workstream against [#247](https://github.com/accordproject/apap/issues/247), separate from the GSoC deliverable.
-
-The first pass of #247 came back with a reviewer note that it "reads AI-generated." Accurate. A design proposal that lists three alternatives with even-handed pros and cons is easier to write than a design proposal that picks one and defends the pick. The rewrite that landed picks sidecar, states the reason, and treats R1 and R2 as "here is why not" rather than "here is another option." That register change carried through every design document after it.
+A2A (the agent-to-agent protocol) was scoped as a design-of-record deliverable for this GSoC cycle, not an implementation slice. By week 11 the reason was clear: the parts of A2A that would either work or break down the line live in the design decisions (auth boundary, discovery semantics, how the new transport composes with the existing MCP one), not in the code. Week 12 went to the design. Sidecar was ratified 2026-08-18 by Dan and Niall. The implementation is a follow-on workstream against [#247](https://github.com/accordproject/apap/issues/247), separate from the GSoC deliverable.
 
 <figure style="margin: 1.5em 0;">
   <img src="diagrams/A2ASidecarArchitecture.png" alt="Figure 4. A2A sidecar architecture" style="width: 100%; max-width: 1400px; display: block; margin: 0 auto;">
@@ -261,20 +255,16 @@ The chosen shape:
 - The same service layer under both `ApapAgentExecutor` and the existing MCP handler
 - Discovery served at `/.well-known/agent-card.json`
 
-Two true-adapter readings were evaluated and rejected, and the reasoning generalizes to any team weighing "add a protocol" against "multiplex on an existing one":
+Two alternative shapes were considered and rejected before the sidecar landed. The reasoning is worth showing because it generalizes to any team weighing "add a new protocol" against "multiplex on an existing one":
 
-- **R1 registered A2A skills as MCP tools inside the existing MCP transport.** Zero new routes, zero new dependencies, one obvious flaw: no `POST /a2a` exists, so nothing hitting the A2A wire spec (agent cards, JSON-RPC method names, discovery semantics) can succeed. Compliance failure is categorical, not incremental.
-- **R2 multiplexed A2A and MCP methods on `/mcp` via a custom JSON-RPC dispatch middleware.** Neither SDK ships that glue. A single dispatcher failure would take down both protocols at once. Protocol coupling that neither vendor supports is a bet that both vendors will keep their JSON-RPC surfaces compatible forever; the correct default is to assume they will not.
+- **R1 registered A2A skills as MCP tools inside the existing MCP transport.** Zero new routes, zero new dependencies, one obvious problem: no `POST /a2a` endpoint would exist. Anything hitting the A2A wire spec (agent cards, JSON-RPC method names, discovery semantics) simply cannot succeed against R1. It fails the spec, not just the details.
+- **R2 multiplexed A2A and MCP methods on `/mcp` via a custom JSON-RPC dispatch middleware.** Neither SDK ships that glue, so it would have to be written in-house. A single dispatcher failure would take down both protocols at once. That kind of coupling is a bet that Anthropic and the A2A working group will keep their JSON-RPC surfaces compatible with each other forever, and the safer assumption is that they will not.
 
-Sidecar keeps the surfaces independent at the routing layer, at the SDK layer, and at the failure-isolation layer, while still sharing the one thing that matters (the service layer beneath). Full analysis at [#247](https://github.com/accordproject/apap/issues/247).
+Sidecar keeps the two protocols independent at the routing layer, at the SDK layer, and at the failure-isolation layer, while still sharing the one thing worth sharing: the service layer underneath. Full analysis at [#247](https://github.com/accordproject/apap/issues/247).
 
-Auth for v1 is HS256 shared-secret JWT via a bundled `JwtAdapter` reference. The `AuthAdapter` interface stays extensible so future adapters can add RS256 with JWKS, mTLS, or OIDC without breaking existing consumers.
+Auth for v1 is a shared-secret JWT (HS256) via a bundled `JwtAdapter` reference. The `AuthAdapter` interface itself stays extensible, so future adapters can add RS256 with JWKS, mTLS, or OIDC without breaking existing consumers.
 
-Auth is table stakes. The harder work sits above the adapter: retention policy, jurisdictional data residency, PII on agreement payloads. `AuthAdapter` keeps its scope narrow on purpose so integrators can slot that middleware in above `extractUser` without touching the transport.
-
-<blockquote style="border-left: 4px solid #ef6c00; padding: 0.6em 1.2em; margin: 1.5em 0; font-size: 1.2em; font-style: italic; color: #1a1a1a; background: #fff8f0;">
-"Auth is table stakes. The harder work sits above the adapter."
-</blockquote>
+Auth on its own is only the entry gate. The harder work sits above the adapter: retention policy, jurisdictional data residency, and how PII is handled on agreement payloads. `AuthAdapter` keeps its scope narrow on purpose so integrators can slot that middleware in above `extractUser` without touching the transport at all.
 
 ---
 
@@ -287,7 +277,7 @@ Auth is table stakes. The harder work sits above the adapter: retention policy, 
   </figcaption>
 </figure>
 
-The proposal scoped four deliverables against the RI as it existed on June 2: a shared service layer with structured errors, four-tier testing at 90%+ CI coverage, client-specific tutorials, and Docker Compose + Pino + `/healthz`. By August 25, the shape of the cycle had absorbed five additional workstreams that weren't in the original scope. The MCP SDK cut its 2.0 line mid-cycle, the Concerto ecosystem bumped through PG18 and cicero-core 2.x, the A2A wire spec matured enough to warrant a design of record, and the typed-context A/B eval emerged as the "does this actually help the model?" question. The plan absorbed the moving parts.
+The proposal on June 2 scoped four deliverables: a shared service layer with structured errors, four-tier testing at 90%+ CI coverage, client-specific tutorials, and Docker Compose + Pino + `/healthz`. By August 25, five additional workstreams had joined that list. The MCP SDK cut its 2.0 line mid-cycle. The Concerto ecosystem bumped through PG18 and cicero-core 2.x. The A2A wire spec matured enough to warrant a design of record. And the typed-context evaluation grew out of the question "does any of this actually help the model." The cycle absorbed all of them.
 
 | Workstream | In proposal? | Final state |
 |:---|:---|:---|
@@ -302,7 +292,7 @@ The proposal scoped four deliverables against the RI as it existed on June 2: a 
 | A2A wrapper (sidecar design) | No | <strong style="color: #ef6c00;">Design done</strong>, impl deferred |
 | Subscriptions + stateless (SDK 2.0 native) | No | <strong style="color: #546e7a;">Deferred</strong> to [#232](https://github.com/accordproject/apap/issues/232) |
 
-Five workstreams shipped as code, one shipped as design of record, one deferred to a follow-up branch. The honest gap is the E2E test tier, which stayed thinner than proposed and folded into integration coverage rather than a dedicated harness. Rationale for A2A design-only is in §07.
+Five workstreams shipped as code, one shipped as design of record, one deferred to a follow-up branch. The one gap worth naming openly is the E2E test tier: it stayed thinner than proposed and folded into integration coverage rather than getting a dedicated harness. The reasoning behind A2A landing as design-only is in §07.
 
 ---
 
@@ -354,8 +344,9 @@ curl -s http://localhost:9000/templates | jq
 curl -s http://localhost:9000/capabilities | jq
 
 # MCP tools (via the modelcontextprotocol inspector)
-npx @modelcontextprotocol/inspector \
-  --transport streamable-http --url http://localhost:9000/mcp
+npx @modelcontextprotocol/inspector
+# then in the browser UI: Transport = Streamable HTTP,
+#                          URL = http://localhost:9000/mcp
 ```
 
 The Reference Implementation upstream runs the same way from `accordproject/apap/server`:
