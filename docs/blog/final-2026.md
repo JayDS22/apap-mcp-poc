@@ -39,23 +39,49 @@ window: June 2 to August 25, 2026 (12 weeks)
 
 ---
 
-## `01`: The seam is load-bearing
+## `01`: Why hardening APAP mattered
 
-The pre-GSoC MCP handler for `templates.list` was a thin wrapper. Most of it marshaled HTTP request and response envelopes for a call to another route on the same server. It read as a client library. It was the server calling itself.
+Integrating with a legal-contracts platform used to mean hand-writing glue code: read the OpenAPI spec, wire up handlers, map response schemas into your own types, figure out what to do with the vague error strings when things broke. Standard integration work.
 
-That is a small technical defect and a large narrative one. The agentic economy is not a projection. AI agents are already transacting on-chain in fractions of a cent via protocols like x402, running MCP tools inside Claude Code and ChatGPT desktop, and delegating tasks agent-to-agent through the emerging A2A wire spec. The protocols they call were built for humans who can triage a vague `500`. Agents cannot. If an agent cannot tell "the record is missing" from "the database is on fire", it has no basis to retry, fall back, or escalate.
+More of that integration is now being done by AI agents instead. Tools like Claude, ChatGPT, and Cursor call APIs directly on the developer's behalf, from natural-language prompts. Those APIs were built for humans on the other end, people who could read a confusing error message and decide whether to retry, repair the input, or bail out. An AI agent needs the same three options, but a bare `500` doesn't tell it which one to pick.
 
-Accord Project's Agreement Protocol (APAP) sits at the contract layer of that stack: the lifecycle spec for template registration, agreement instantiation, event triggering, state, and governance, modelled in Concerto (the Accord Project's typed knowledge-representation language for business data). Concerto generates the OpenAPI surface, the Drizzle schema, and the `$class` discriminators that let an agent recognize a `Template` from a `Trigger` from an `Agreement`.
+### What APAP is
 
-The Reference Implementation ships an Express + Postgres server speaking REST and MCP on top of that model. Idea #4 in the 2026 GSoC ideas list was to harden it for the agent era.
+The **Accord Project's Agreement Protocol** (APAP) is an open protocol for the agreement lifecycle: templates, running instances, and the events that drive them. The underlying data model is Concerto, the project's typed data-modeling language for business objects.
 
-What shipped over twelve weeks:
+| Concept | Example |
+|:---|:---|
+| **Template** | A reusable NDA, service agreement, or employment contract |
+| **Running instance** | An executed NDA between Company A and Contractor B, held as state |
+| **Event** | An invoice received, a shipment scanned, a deadline reached, inputs that drive state transitions per the template's clauses |
 
-- **28 merged PRs** on `accordproject/apap` between June 2 and August 25
-- **MCP SDK 2.0** migration completed on the RI ([#227](https://github.com/accordproject/apap/pull/227))
-- **PG18** support with an RLS-isolation smoke test in CI ([#245](https://github.com/accordproject/apap/pull/245))
-- **Paged MCP resource URIs** via RFC 6570 form-style query expansion ([#243](https://github.com/accordproject/apap/pull/243))
-- **A2A wrapper**: sidecar architecture ratified 2026-08-18, spec published at [#247](https://github.com/accordproject/apap/issues/247)
+Its Reference Implementation ships with two ways to talk to it:
+
+- A traditional REST API for human developers
+- A newer surface based on MCP. MCP (Model Context Protocol) is an open protocol Anthropic introduced for AI agents to call server-side tools directly.
+
+Through MCP, an agent can browse templates, create agreements, trigger clauses, and inspect the data model.
+
+### The three problems this cycle set out to fix
+
+When *"Hardening the APAP/MCP Server"* was published as **Idea #4** on the 2026 GSoC ideas list, the Reference Implementation had three problems that made it hard for AI agents to work with reliably:
+
+1. **Bare-string errors** the agent couldn't branch on to choose retry, repair, or bail
+2. **An internal HTTP loop:** MCP handlers called `fetch('http://localhost:9000/...')` back into the same Express app (a Node.js web framework) they were running in. Middleware ran twice, the payload serialized twice, and MCP errors were translations of REST errors instead of what actually failed.
+3. **No automated test coverage** on the MCP surface at all
+
+### Twelve weeks later
+
+28 pull requests merged into `accordproject/apap`, delivering:
+
+- **Shared service layer** with typed errors, ending the internal HTTP loop
+- **MCP SDK 2.0 migration** on the Reference Implementation ([#227](https://github.com/accordproject/apap/pull/227))
+- **Typed-context evaluation:** task-completion rate rose 20pp on Claude Sonnet 4.6 and 38pp on GPT-4o in a three-condition comparison ([#199](https://github.com/accordproject/apap/pull/199))
+- **A2A sidecar architecture** ratified as design of record ([#247](https://github.com/accordproject/apap/issues/247))
+- **PG18 support** with a row-level-security smoke test in CI ([#245](https://github.com/accordproject/apap/pull/245))
+- **Paged MCP resource URIs** using RFC 6570 URL-template syntax ([#243](https://github.com/accordproject/apap/pull/243))
+
+A2A is the emerging agent-to-agent protocol for cross-server orchestration; more in §07.
 
 ---
 
